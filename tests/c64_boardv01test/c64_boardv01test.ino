@@ -1,5 +1,5 @@
 /* c64_boardtestv01 code is placed under the MIT license
- * Copyright (c) 2014,2015 Frank Bösing
+ * Copyright (c) 2017 Frank Bösing
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
