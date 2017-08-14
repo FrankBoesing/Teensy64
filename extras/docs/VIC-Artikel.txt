@@ -2293,7 +2293,7 @@ das Vergleichen der Strahlkoordinaten mit Start- und Stoppositionen, die
 sich durch die CSEL/RSEL-Bits auswählen lassen. Der Rahmen wird also nicht
 grundsätzlich innerhalb eines bestimmten Koordinatenbereichs dargestellt,
 sondern bei bestimmten Koordinaten ein- und ausgeschaltet. Sorgt man nun
-durch geeignetes Umschalten von CSEL/RSEL dafür, daß der
+durch geeignetes Umschalten von CSEL/RSEL dafür, daß der 
 Koordinatenvergleich niemals anspricht, so wird der Rahmen z.B. nicht
 eingeschaltet und man kann auch die Grafik im Randbereich sehen, die
 normalerweise durch den Rahmen überdeckt wird. Diese Technik wird als
