@@ -12,7 +12,7 @@ Features
 - 31kHz reSID Audio emulation
 - Audio Line-Out
 - Compatible to SD2IEC
-- Simple drive emulation included (load "whateve.prg" or load "$" )
+- Simple drive emulation included (load "whatever.prg" or load "$" )
 - Supports original joysticks
 - very small
-
+- A custom board is available which can be used for other purposes, too
