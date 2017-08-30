@@ -11,7 +11,8 @@ Features
 - USB-Keyboards
 - 31kHz reSID Audio emulation
 - Audio Line-Out
-- Compatible SD2IEC
+- Compatible to SD2IEC
+- Simple drive emulation included (load "whateve.prg" or load "$" )
 - Supports original joysticks
 - very small
 
