@@ -4,6 +4,8 @@ Commodore C64 Emulation on a [Teensy 3.6](https://www.pjrc.com/store/teensy36.ht
 
 ![Teensy64](https://github.com/FrankBoesing/Teensy64/blob/master/extras/logo201707.png?raw=true)
 
+[![Video](http://img.youtube.com/vi/CjijgL0VC6k/0.jpg)](https://www.youtube.com/watch?v=CjijgL0VC6k "C64 Emulation early demo")
+
 Features
 ========
 - Supports Commodore Serial IEC Bus
