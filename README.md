@@ -10,7 +10,7 @@ Features
 ========
 - Supports Commodore Serial IEC Bus
 - For ILI9341 SPI Display
-- USB-Keyboards
+- USB-Keyboards (wireless too)
 - 31kHz reSID Audio emulation
 - Audio Line-Out
 - Compatible to SD2IEC
@@ -22,3 +22,4 @@ Features
 Board
 ========
 ![Teensy64](https://forum.pjrc.com/attachment.php?attachmentid=10674&d=1495748304)
+![Teensy64](https://forum.pjrc.com/attachment.php?attachmentid=10675&d=1495750739)
