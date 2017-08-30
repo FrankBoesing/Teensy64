@@ -1,1 +1,4 @@
-*.rb linguist-language=Arduino
+# Manually classify the file types so that GitHub will label this as an Arduino project.
+*.ino linguist-language=Arduino
+*.cpp linguist-language=Arduino
+*.h linguist-language=Arduino
