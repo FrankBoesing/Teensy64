@@ -42,7 +42,7 @@
 #define SCREEN_DMA_MAX_SIZE 0xD000
 #define SCREEN_DMA_NUM_SETTINGS (((uint32_t)((2 * ILI9341_TFTHEIGHT * ILI9341_TFTWIDTH) / SCREEN_DMA_MAX_SIZE))+1)
 
-//const int dma_linestarts[SCREEN_DMA_NUM_SETTINGS] = 
+//const int dma_linestarts[SCREEN_DMA_NUM_SETTINGS] =
 
 DMAMEM uint16_t screen[ILI9341_TFTHEIGHT][ILI9341_TFTWIDTH];
 DMASetting dmasettings[SCREEN_DMA_NUM_SETTINGS];
@@ -109,6 +109,7 @@ void ILI9341_t3DMA::begin(void) {
     digitalWrite(_rst, LOW);
     delay(20);
     digitalWrite(_rst, HIGH);
+	delay(120);
   }
   SPI.beginTransaction(SPISettings(SPICLOCK, MSBFIRST, SPI_MODE0));
   const uint8_t *addr = init_commands;
@@ -127,42 +128,16 @@ void ILI9341_t3DMA::begin(void) {
       SPI.transfer(*addr++);
     }
   }
-  
-  
+
+
   digitalWrite(_dc, 0);
   SPI.transfer(ILI9341_SLPOUT);
   digitalWrite(_dc, 1);
   digitalWrite(_cs, 1);
   SPI.endTransaction();
 
-  delay(120);
-  
   //Set C64 Palette
- /*
-  SPI.beginTransaction(SPISettings(1e6, MSBFIRST, SPI_MODE0));
-  digitalWrite(_dc, 0);
-  digitalWrite(_cs, 0);
-  SPI.transfer(0x2d);
-  digitalWrite(_dc, 1);
-  int v;
-  for (int i = 0; i<32; i++) {
-	  if (i<16) v = (palette[i]>>11) & 0x31; else v = i;
-	  SPI.transfer(v << 1);
-	
-  }
-  for (int i = 0; i<64; i++) {
-	  if (i<16) v = (palette[i]>>5) & 0x63; else v = i;
-	  
-	  SPI.transfer(v << 0);
-	
-  }
-  for (int i = 0; i<32; i++) {
-	  if (i<16) v = (palette[i]) & 0x31; else v = i;
-	  
-	  SPI.transfer(v << 1);
-	
-  }
-*/
+
   digitalWrite(_dc, 1);
   digitalWrite(_cs, 1);
   SPI.endTransaction();
