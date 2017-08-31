@@ -260,24 +260,24 @@ void mode0 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t
       unsigned m = min(8, pe - p);
       for (unsigned i = 0; i < m; i++) {
         int sprite = *spl;
-        int c = (chr >> 7);
+
         if (sprite) {     // Sprite: Ja
           int spritenum = 1 << ( (sprite >> 8) & 0x07);
           int spritepixel = sprite & 0x0f;
 
           if (sprite & 0x4000) {   // Sprite: Hinter Text  MDP = 1
-            if (c > 0) {
+            if (chr & 0x80) {
               cpu.vic.fgcollision |= spritenum;
               pixel = fgcol;
             } else {
               pixel = spritepixel;
             }
           } else {            // Sprite: Vor Text //MDP = 0
-            if (c > 0) cpu.vic.fgcollision |= spritenum;
+            if (chr & 0x80) cpu.vic.fgcollision |= spritenum;
             pixel = spritepixel;
           }
         } else {            // Kein Sprite
-          pixel = (c > 0) ? fgcol : bgcol;
+          pixel = (chr & 0x80) ? fgcol : bgcol;
         }
 
         *p++ = cpu.vic.palette[pixel];
@@ -410,9 +410,9 @@ void mode1 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t
             */
             int spritenum = 1 << ((sprite >> 8) & 0x07);
             int spritepixel = sprite & 0x0f;
-            int c = (chr >> 7) & 0x01;
+
             if (sprite & 0x4000) {   // MDP = 1
-              if (c) { //Vordergrundpixel ist gesetzt
+              if (chr & 0x80) { //Vordergrundpixel ist gesetzt
                 cpu.vic.fgcollision |= spritenum;
                 pixel = colors[3];
               } else { //Hintergrundgrafik
@@ -420,7 +420,7 @@ void mode1 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t
               }
 
             } else {            // MDP = 0
-              if (c) cpu.vic.fgcollision |= spritenum; //Vordergrundpixel ist gesetzt
+              if (chr & 0x80) cpu.vic.fgcollision |= spritenum; //Vordergrundpixel ist gesetzt
               pixel = spritepixel;
             }
 
@@ -447,7 +447,7 @@ void mode1 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t
             int spritepixel = sprite & 0x0f;
             if (sprite & 0x4000) {  // MDP = 1
 
-              if (c & 0x02) {  //Vordergrundpixel ist gesetzt
+              if (chr & 0x80) {  //Vordergrundpixel ist gesetzt
                 cpu.vic.fgcollision |= spritenum;
                 pixel = colors[c];
               } else { //Hintergrundgrafik
@@ -455,7 +455,7 @@ void mode1 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t
               }
 
             } else {          // MDP = 0
-              if (c & 0x02) cpu.vic.fgcollision |= spritenum; //Vordergrundpixel ist gesetzt
+              if (chr & 0x80) cpu.vic.fgcollision |= spritenum; //Vordergrundpixel ist gesetzt
               pixel = spritepixel;
             }
 
@@ -472,14 +472,14 @@ void mode1 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t
             int spritenum = 1 << ((sprite >> 8) & 0x07);
             int spritepixel = sprite & 0x0f;
             if (sprite & 0x4000) {  // MDP = 1
-              if (c & 0x02) { //Vordergrundpixel ist gesetzt
+              if (chr & 0x80) { //Vordergrundpixel ist gesetzt
                 cpu.vic.fgcollision |= spritenum;
                 pixel = colors[c];
               } else { //Hintergrundgrafik
                 pixel = spritepixel;
               }
             } else {          // MDP = 0
-              if (c & 0x02) cpu.vic.fgcollision |= spritenum; //Vordergrundpixel ist gesetzt
+              if (chr & 0x80) cpu.vic.fgcollision |= spritenum; //Vordergrundpixel ist gesetzt
               pixel = spritepixel;
             }
           } else { // Kein Sprite
@@ -612,7 +612,7 @@ void mode2 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t
       for (unsigned i = 0; i < m; i++) {
 
         int sprite = *spl;
-        int c = (chr >> 7);
+
         chr = chr << 1;
         if (sprite) {     // Sprite: Ja
           /*
@@ -628,19 +628,19 @@ void mode2 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t
           int spritenum = 1 << ((sprite >> 8) & 0x07);
           int spritepixel = sprite & 0x0f;
           if (sprite & 0x4000) {   // MDP = 1
-            if (c > 0) { //Vordergrundpixel ist gesetzt
+            if (chr & 0x80) { //Vordergrundpixel ist gesetzt
               cpu.vic.fgcollision |= spritenum;
               pixel = fgcol;
             } else { //Hintergrundgrafik
               pixel = spritepixel;
             }
           } else {            // MDP = 0
-            if (c > 0) cpu.vic.fgcollision |= spritenum; //Vordergrundpixel ist gesetzt
+            if (chr & 0x80) cpu.vic.fgcollision |= spritenum; //Vordergrundpixel ist gesetzt
             pixel = spritepixel;
           }
 
         } else {            // Kein Sprite
-          pixel = (c > 0) ? fgcol : bgcol;
+          pixel = (chr & 0x80) ? fgcol : bgcol;
         }
 
         *p++ = cpu.vic.palette[pixel];
@@ -891,21 +891,21 @@ void mode4 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t
       for (unsigned i = 0; i < m; i++) {
 
         int sprite = *spl;
-        uint32_t c = (chr >> 7);
+
         if (sprite) {     // Sprite: Ja
           int spritenum = 1 << ((sprite >> 8) & 0x07);
           int spritepixel = sprite & 0x0f;
           if (sprite & 0x4000) {   // Sprite: Hinter Text
-            if (c > 0) {
+            if (chr & 0x80) {
               cpu.vic.fgcollision |= spritenum;
               pixel = fgcol;
             } else pixel = bgcol;
           } else {              // Sprite: Vor Text
-            if (c > 0) cpu.vic.fgcollision |= spritenum;
+            if (chr & 0x80) cpu.vic.fgcollision |= spritenum;
             pixel = spritepixel;
           }
         } else {                // Kein Sprite
-          pixel = (c > 0) ? fgcol : bgcol;
+          pixel = (chr & 0x80) ? fgcol : bgcol;
         }
         spl++;
         chr = chr << 1;
@@ -1018,9 +1018,9 @@ void mode5 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t
             */
             int spritenum = 1 << ((sprite >> 8) & 0x07);
             int spritepixel = sprite & 0x0f;
-            int c = (chr >> 7) & 0x01;
+
             if (sprite & 0x4000) {   // MDP = 1
-              if (c) { //Vordergrundpixel ist gesetzt
+              if (chr & 0x80) { //Vordergrundpixel ist gesetzt
                 cpu.vic.fgcollision |= spritenum;
                 pixel = 0;
               } else { //Hintergrundgrafik
@@ -1028,7 +1028,7 @@ void mode5 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t
               }
 
             } else {            // MDP = 0
-              if (c) cpu.vic.fgcollision |= spritenum; //Vordergrundpixel ist gesetzt
+              if (chr & 0x80) cpu.vic.fgcollision |= spritenum; //Vordergrundpixel ist gesetzt
               pixel = spritepixel;
             }
 
@@ -1046,7 +1046,7 @@ void mode5 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t
 
         for (unsigned i = 0; i < 4; i++) {
           if (p >= pe) break;
-          int c = (chr >> 6) & 0x03;
+
           chr = chr << 2;
 
           int sprite = *spl;
@@ -1055,7 +1055,7 @@ void mode5 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t
             int spritepixel = sprite & 0x0f;
             if (sprite & 0x4000) {  // MDP = 1
 
-              if (c & 0x02) {  //Vordergrundpixel ist gesetzt
+              if (chr & 0x80) {  //Vordergrundpixel ist gesetzt
                 cpu.vic.fgcollision |= spritenum;
                 pixel = 0;
               } else { //Hintergrundgrafik
@@ -1063,7 +1063,7 @@ void mode5 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t
               }
 
             } else {          // MDP = 0
-              if (c & 0x02) cpu.vic.fgcollision |= spritenum; //Vordergrundpixel ist gesetzt
+              if (chr & 0x80) cpu.vic.fgcollision |= spritenum; //Vordergrundpixel ist gesetzt
               pixel = spritepixel;
             }
 
@@ -1080,14 +1080,14 @@ void mode5 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t
             int spritenum = 1 << ((sprite >> 8) & 0x07);
             int spritepixel = sprite & 0x0f;
             if (sprite & 0x4000) {  // MDP = 1
-              if (c & 0x02) { //Vordergrundpixel ist gesetzt
+              if (chr & 0x80) { //Vordergrundpixel ist gesetzt
                 cpu.vic.fgcollision |= spritenum;
                 pixel = 0;
               } else { //Hintergrundgrafik
                 pixel = spritepixel;
               }
             } else {          // MDP = 0
-              if (c & 0x02) cpu.vic.fgcollision |= spritenum; //Vordergrundpixel ist gesetzt
+              if (chr & 0x80) cpu.vic.fgcollision |= spritenum; //Vordergrundpixel ist gesetzt
               pixel = spritepixel;
             }
           } else { // Kein Sprite
@@ -1163,7 +1163,7 @@ void mode6 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t
       for (unsigned i = 0; i < m; i++) {
 
         int sprite = *spl;
-        int c = (chr >> 7);
+
         chr = chr << 1;
         if (sprite) {     // Sprite: Ja
           /*
@@ -1179,14 +1179,14 @@ void mode6 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t
           int spritenum = 1 << ((sprite >> 8) & 0x07);
           int spritepixel = sprite & 0x0f;
           if (sprite & 0x4000) {   // MDP = 1
-            if (c > 0) { //Vordergrundpixel ist gesetzt
+            if (chr & 0x80) { //Vordergrundpixel ist gesetzt
               cpu.vic.fgcollision |= spritenum;
               pixel = 0;
             } else { //Hintergrundgrafik
               pixel = spritepixel;
             }
           } else {            // MDP = 0
-            if (c > 0) cpu.vic.fgcollision |= spritenum; //Vordergrundpixel ist gesetzt
+            if (chr & 0x80) cpu.vic.fgcollision |= spritenum; //Vordergrundpixel ist gesetzt
             pixel = spritepixel;
           }
 
@@ -1250,7 +1250,7 @@ void mode7 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t
   uint16_t pixel;
 
   if (cpu.vic.lineHasSprites) {
-    uint16_t bgcol = 0;
+
     do {
 
       BADLINE(x);
@@ -1260,7 +1260,7 @@ void mode7 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t
 
       for (unsigned i = 0; i < 4; i++) {
         if (p >= pe) break;
-        uint32_t c = (chr >> 6) & 0x03;
+
         chr = chr << 2;
 
         int sprite = *spl;
@@ -1269,18 +1269,18 @@ void mode7 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t
           int spritepixel = sprite & 0x0f;
           if (sprite & 0x4000) {  // MDP = 1
 
-            if (c & 0x02) {  //Vordergrundpixel ist gesetzt
+            if (chr & 0x80) {  //Vordergrundpixel ist gesetzt
               cpu.vic.fgcollision |= spritenum;
-              pixel = bgcol;
+              pixel = 0;
             } else { //Hintergrundgrafik
               pixel = spritepixel;
             }
           } else {          // MDP = 0
-            if (c & 0x02) cpu.vic.fgcollision |= spritenum; //Vordergundpixel ist gesetzt
+            if (chr & 0x80) cpu.vic.fgcollision |= spritenum; //Vordergundpixel ist gesetzt
             pixel = spritepixel;
           }
         } else { // Kein Sprite
-          pixel = bgcol;
+          pixel = 0;
         }
 
         *p++ = cpu.vic.palette[pixel];
@@ -1293,19 +1293,19 @@ void mode7 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t
           int spritepixel = sprite & 0x0f;
           if (sprite & 0x4000) {  // MDP = 1
 
-            if (c & 0x02) {  //Vordergrundpixel ist gesetzt
+            if (chr & 0x80) {  //Vordergrundpixel ist gesetzt
               cpu.vic.fgcollision |= spritenum;
-              pixel = bgcol;
+              pixel = 0;
             } else { //Hintergrundgrafik
               pixel = spritepixel;
             }
 
           } else {          // MDP = 0
-            if (c & 0x02) cpu.vic.fgcollision |= spritenum; //Vordergundpixel ist gesetzt
+            if (chr & 0x80) cpu.vic.fgcollision |= spritenum; //Vordergundpixel ist gesetzt
             pixel = spritepixel;
           }
         } else { // Kein Sprite
-          pixel = bgcol;
+          pixel = 0;
         }
 
         *p++ = cpu.vic.palette[pixel];
