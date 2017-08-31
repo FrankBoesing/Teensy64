@@ -1,5 +1,5 @@
 /*
-	Copyright Frank Bösing, 2017	
+	Copyright Frank Bösing, 2017
 
 	This file is part of Teensy64.
 
@@ -30,7 +30,7 @@
 
     Sie sollten eine Kopie der GNU General Public License zusammen mit diesem
     Programm erhalten haben. Wenn nicht, siehe <http://www.gnu.org/licenses/>.
-		
+
 */
 
 #include "patches.h"
@@ -45,13 +45,6 @@ static char filename[64];
 static char buffer[2];
 
 
-void convertFilename(char * filename) {
-	if (filename[6]== '~') {
-		filename[6] = ' ';		
-	}
-}
-
-
 void patchLOAD(void) {
 
 int device;
@@ -62,10 +55,10 @@ uint16_t addr,size;
 	device = cpu.RAM[0xBA];
 	if (device != 1) {
 		//Jump to unpatched original address:
-		cpu.pc = rom_kernal[cpu.pc - 0xe000 + 1] * 256 + rom_kernal[cpu.pc - 0xe000];		
+		cpu.pc = rom_kernal[cpu.pc - 0xe000 + 1] * 256 + rom_kernal[cpu.pc - 0xe000];
 		return;
 	};
-	
+
 	if (!SDinitialized) {
 		cpu.pc = 0xF707; //Device not present error
 		Serial.println("SD Card not initialized");
@@ -78,21 +71,21 @@ uint16_t addr,size;
 		Serial.println(DIRECTORY);
 		Serial.println();
 		file = SD.open(DIRECTORY);
-		int blocks, start, len; 
+		int blocks, start, len;
 		addr = cpu.RAM[0x2C] * 256 + cpu.RAM[0x2B];
-		
+
 		/*first line of BASIC listing */
 		start = addr;
 		cpu.RAM[addr++] = (start + 30) & 0xff;
-		cpu.RAM[addr++] = (start + 30) >> 8;		
+		cpu.RAM[addr++] = (start + 30) >> 8;
 		blocks = 0;
 		cpu.RAM[addr++] = blocks & 0xff;
-		cpu.RAM[addr++] = blocks >> 8;		
+		cpu.RAM[addr++] = blocks >> 8;
 
 		const char title[] = "\x12\"TEENSY64        \" FB 07";
-		strcpy((char * )&cpu.RAM[addr], title);	
+		strcpy((char * )&cpu.RAM[addr], title);
 		addr = start + 30;
-		
+
 		while (true) {
 			entry = file.openNextFile();
 			if (! entry) {
@@ -100,16 +93,16 @@ uint16_t addr,size;
 				break;
 			}
 			int offset;
-			if (!entry.isDirectory()) {													
-				
+			if (!entry.isDirectory()) {
+
 				/* Listing to BASIC-RAM */
 				start = addr;
 				offset = 0;
-				
+
 				//pointer to next line:
 				cpu.RAM[addr++] = (start + 32) & 0xff;
 				cpu.RAM[addr++] = (start + 32) >> 8;
-				
+
 				//# of blocks
 				blocks = ceil((float)entry.size()/256.0f);
 				cpu.RAM[addr++] = blocks & 0xff;
@@ -117,36 +110,43 @@ uint16_t addr,size;
 
 				if (blocks < 100)   { cpu.RAM[addr++] = ' '; offset++;}
 				if (blocks < 10)    { cpu.RAM[addr++] = ' '; offset++; }
-			 	cpu.RAM[addr++] = ' '; 
-				
+			 	cpu.RAM[addr++] = ' ';
+
 				//filename:
-				cpu.RAM[addr++] = '"'; 			
-				strcpy((char * )&cpu.RAM[addr], entry.name());
-				len = strlen(entry.name());
+				cpu.RAM[addr++] = '"';
+				char *s = (char * )&cpu.RAM[addr];
+				entry.getName(s, 17);
+				while(*s) {*s = toupper(*s); s++;}
+				//strcpy((char * )&cpu.RAM[addr], entry.name());
+				len = strlen((char * )&cpu.RAM[addr]);
+
 				if (len > 16) len = 16;
 				addr += len;
 				cpu.RAM[addr++] = '"';
-				
+
 				//fill with space
 				while ((addr-start) < (32)) { cpu.RAM[addr++] = ' ';}
-			
+
 				//display "PRG"
-				addr = start + 23 + offset;  			
-				cpu.RAM[addr++] = ' ';  
-				cpu.RAM[addr++] = 'P';  
-				cpu.RAM[addr++] = 'R'; 
-				cpu.RAM[addr++] = 'G'; 
-				
+				addr = start + 23 + offset;
+				cpu.RAM[addr++] = ' ';
+				cpu.RAM[addr++] = 'P';
+				cpu.RAM[addr++] = 'R';
+				cpu.RAM[addr++] = 'G';
+
 				//line-ending
 				cpu.RAM[start+31] = 0;
-				addr = start + 32;				
+				addr = start + 32;
 
 				/* Listing to serial console */
 				itoa (blocks,filename,10);
 				len = strlen(filename);
 				while (len < 4) { strcat(filename," "); len++; };
 				strcat(filename, "\"");
-				strcat(filename, entry.name());
+				char nbuf[18] = {0};
+				entry.getName(nbuf, 17);
+				strcat(filename, nbuf);
+				//strcat(filename, entry.getName());
 				strcat(filename, "\"");
 				len = strlen(filename);
 				while (len < 18+4) { strcat(filename," "); len++; };
@@ -157,7 +157,7 @@ uint16_t addr,size;
 			entry.close();
 		}
 		file.close();
-		
+
         /*add last line to BASIC listing*/
 		start = addr;
 		cpu.RAM[addr++] = (start + 32) & 0xff;
@@ -165,7 +165,7 @@ uint16_t addr,size;
 		//# of blocks. todo : determine free space on sd card
 		blocks = 65535;
 		cpu.RAM[addr++] = blocks & 0xff;
-		cpu.RAM[addr++] = blocks >> 8;		
+		cpu.RAM[addr++] = blocks >> 8;
 		if (blocks < 100) { cpu.RAM[addr++] = ' ';}
 		if (blocks < 10)  { cpu.RAM[addr++] = ' ';}
 		const char blockfree[] = "BLOCKS FREE.";
@@ -176,44 +176,44 @@ uint16_t addr,size;
 		while ((addr-start) < (32)) { cpu.RAM[addr++] = ' ';}
 		cpu.RAM[start+31] = 0;
 		cpu.RAM[start+32] = 0;
-		cpu.RAM[start+33] = 0;	
-		
+		cpu.RAM[start+33] = 0;
+
 		cpu.y = 0x49; //Offset for "LOADING"
-		cpu.pc = 0xF12B; //Print and return		
+		cpu.pc = 0xF12B; //Print and return
 		return;
 	} // end directory listing
 
-	
+
 	//$B7    : Length of file name or disk command
 	//$BB-$BC: Pointer to current file name or disk command
     memset(filename,0,sizeof(filename));
 	strcpy(filename, DIRECTORY);
-	strncat(filename, (char*)&cpu.RAM[cpu.RAM[0xBC] * 256 + cpu.RAM[0xBB]], cpu.RAM[0xB7] );	
+	strncat(filename, (char*)&cpu.RAM[cpu.RAM[0xBC] * 256 + cpu.RAM[0xBB]], cpu.RAM[0xB7] );
 	secondaryAddress = cpu.RAM[0xB9];
-	
+
 	Serial.print(filename);
 	Serial.print(",");
 	Serial.print(device);
 	Serial.print(",");
 	Serial.print(secondaryAddress);
 	Serial.print(":");
-	
+
 	file = SD.open(filename, FILE_READ);
 	if (!file) {
 		Serial.println ("not found.");
 		cpu.pc = 0xf530; //Jump to $F530
 		return;
 	}
-	
+
 	size = file.size();
 	file.read(buffer, 2);
-	addr = buffer[1] * 256 + buffer[0];	
+	addr = buffer[1] * 256 + buffer[0];
 	file.read(&cpu.RAM[addr], size - 2);
 	file.close();
-	
+
 	cpu.RAM[0xAF] = (addr + size - 2) & 0xff;
 	cpu.RAM[0xAE] = (addr + size - 2) / 256;
-	
+
 	cpu.y = 0x49; //Offset for "LOADING"
 	cpu.pc = 0xF12B; //Print and return
 	Serial.println("loaded.");
@@ -229,10 +229,10 @@ uint16_t addr,size;
 	device = cpu.RAM[0xBA];
 	if (device != 1) {
 		//Jump to unpatched original address:
-		cpu.pc = rom_kernal[cpu.pc - 0xe000 + 1] * 256 + rom_kernal[cpu.pc - 0xe000];		
+		cpu.pc = rom_kernal[cpu.pc - 0xe000 + 1] * 256 + rom_kernal[cpu.pc - 0xe000];
 		return;
 	};
-	
+
 	if (!SDinitialized) {
 		cpu.pc = 0xF707; //Device not present error
 		Serial.println("SD Card not initialized");
@@ -243,28 +243,28 @@ uint16_t addr,size;
 		cpu.pc = 0xF707; //Device not present error
 		Serial.println("SD: Could not create " DIRECTORY);
 	}
-		
+
 	//$B7    : Length of file name or disk command
 	//$BB-$BC: Pointer to current file name or disk command
 	memset(filename,0,sizeof(filename));
 	strcpy(filename, DIRECTORY);
 	strncat(filename, (char*)&cpu.RAM[cpu.RAM[0xBC] * 256 + cpu.RAM[0xBB]], cpu.RAM[0xB7] );
-	
+
 	secondaryAddress = cpu.RAM[0xB9];
-	
+
 	Serial.print(filename);
 	Serial.print(",");
 	Serial.print(device);
 	Serial.print(",");
 	Serial.print(secondaryAddress);
 	Serial.print(":");
-	
+
 	addr = cpu.RAM[cpu.a + 1] * 256 + cpu.RAM[cpu.a];
 	size = (cpu.y * 256 + cpu.x) - addr;
 
 	buffer[0] = addr & 0xff;
 	buffer[1] = addr >> 8;
-	
+
 	if (SD.exists(filename)) SD.remove(filename);
 	file = SD.open(filename, FILE_WRITE);
 	if (!file) {
@@ -275,19 +275,19 @@ uint16_t addr,size;
 	file.write(buffer, 2);
 	file.write(&cpu.RAM[addr], size);
 	file.close();
-	
+
 	if (cpu.RAM[0x9D] & 128) {
 		uint16_t pushval = 0xF68D;
 		cpu.RAM[BASE_STACK + cpu.sp] = (pushval >> 8) & 0xFF;
 		cpu.RAM[BASE_STACK + ((cpu.sp - 1) & 0xFF)] = pushval & 0xFF;
 		cpu.sp -= 2;
-		
-		cpu.y = 0x51;		
+
+		cpu.y = 0x51;
 		cpu.pc = 0xF12F;
 	} else {
 		cpu.pc = 0xF68D;
 	}
-		
+
 	Serial.println("saved.");
 	return;
 }
