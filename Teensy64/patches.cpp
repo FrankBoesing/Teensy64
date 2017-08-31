@@ -45,6 +45,13 @@ static char filename[64];
 static char buffer[2];
 
 
+void convertFilename(char * filename) {
+	if (filename[6]== '~') {
+		filename[6] = ' ';		
+	}
+}
+
+
 void patchLOAD(void) {
 
 int device;
@@ -113,13 +120,9 @@ uint16_t addr,size;
 			 	cpu.RAM[addr++] = ' '; 
 				
 				//filename:
-				cpu.RAM[addr++] = '"';
-				char *s = (char * )&cpu.RAM[addr];
-				entry.getName(s, 17);				
-				while(*s) *s++ = toupper(*s);				
-				//strcpy((char * )&cpu.RAM[addr], entry.name());
-				len = strlen((char * )&cpu.RAM[addr]);
-								
+				cpu.RAM[addr++] = '"'; 			
+				strcpy((char * )&cpu.RAM[addr], entry.name());
+				len = strlen(entry.name());
 				if (len > 16) len = 16;
 				addr += len;
 				cpu.RAM[addr++] = '"';
@@ -143,10 +146,7 @@ uint16_t addr,size;
 				len = strlen(filename);
 				while (len < 4) { strcat(filename," "); len++; };
 				strcat(filename, "\"");
-				char nbuf[18] = {0};
-				entry.getName(nbuf, 17);
-				strcat(filename, nbuf);
-				//strcat(filename, entry.getName());
+				strcat(filename, entry.name());
 				strcat(filename, "\"");
 				len = strlen(filename);
 				while (len < 18+4) { strcat(filename," "); len++; };
