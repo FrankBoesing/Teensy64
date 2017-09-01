@@ -35,6 +35,16 @@
 
 #include <SdFat.h>
 
+/* Hint: 
+ set 
+ 
+ USE_SEPARATE_FAT_CACHE 0
+ USE_MULTI_BLOCK_IO 0
+
+ in SdFatConfig.h to save memory (we don't need the additional speed for the small c64 files)
+*/ 
+ 
+
 extern SdFatSdio SD;
 
 #undef BUILTIN_SDCARD
