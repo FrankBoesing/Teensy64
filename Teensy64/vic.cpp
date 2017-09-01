@@ -587,6 +587,7 @@ void mode2 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t
   uint16_t fgcol, pixel;
   uint16_t bgcol;
   uint8_t x = 0;
+  uint8_t * bP = cpu.vic.bitmapPtr + vc * 8 + cpu.vic.rc;
 
   if (cpu.vic.lineHasSprites) {
     do {
@@ -596,7 +597,7 @@ void mode2 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t
       uint8_t t = cpu.vic.lineMemChr[x];
       fgcol = t >> 4;
       bgcol = t & 0x0f;
-      chr = cpu.vic.bitmapPtr[x * 8];
+      chr = bP[x * 8];
 
       x++;
 
@@ -647,7 +648,7 @@ void mode2 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t
       uint8_t t = cpu.vic.lineMemChr[x];
       fgcol = cpu.vic.palette[t >> 4];
       bgcol = cpu.vic.palette[t & 0x0f];
-      chr = cpu.vic.bitmapPtr[x * 8];
+      chr = bP[x * 8];
       x++;
 
       *p++ = (chr & 0x80) ? fgcol : bgcol;
@@ -666,7 +667,7 @@ void mode2 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t
       uint8_t t = cpu.vic.lineMemChr[x];
       fgcol = cpu.vic.palette[t >> 4];
       bgcol = cpu.vic.palette[t & 0x0f];
-      chr = cpu.vic.bitmapPtr[x * 8];
+      chr = bP[x * 8];
 
       x++;
 
@@ -712,6 +713,7 @@ void mode3 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t
 
   uint8_t chr, x;
   uint16_t pixel;
+  uint8_t * bP = cpu.vic.bitmapPtr + vc * 8 + cpu.vic.rc;
 
   x = 0;
 
@@ -727,7 +729,7 @@ void mode3 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t
       colors[2] = t & 0x0f; //01
       colors[3] = cpu.vic.lineMemCol[x];
 
-      chr = cpu.vic.bitmapPtr[x * 8];
+      chr = bP[x * 8];
 
       x++;
 
@@ -794,7 +796,7 @@ void mode3 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t
       colors[1] = cpu.vic.palette[t >> 4];//10
       colors[2] = cpu.vic.palette[t & 0x0f]; //01
       colors[3] = cpu.vic.palette[cpu.vic.lineMemCol[x]];
-      chr = cpu.vic.bitmapPtr[x * 8];
+      chr = bP[x * 8];
       x++;
 
       pixel = colors[(chr >> 6) & 0x03]; *p++ = pixel; *p++ = pixel;
@@ -811,7 +813,7 @@ void mode3 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t
       colors[1] = cpu.vic.palette[t >> 4];//10
       colors[2] = cpu.vic.palette[t & 0x0f]; //01
       colors[3] = cpu.vic.palette[cpu.vic.lineMemCol[x]];
-      chr = cpu.vic.bitmapPtr[x * 8];
+      chr = bP[x * 8];
 
       x++;
       pixel = colors[(chr >> 6) & 0x03]; *p++ = pixel; if (p >= pe) break; *p++ = pixel; if (p >= pe) break;
@@ -1115,6 +1117,7 @@ void mode6 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t
 
   uint8_t chr, pixel;
   uint8_t x = 0;
+  uint8_t * bP = cpu.vic.bitmapPtr + vc * 8 + cpu.vic.rc;
 
   if (cpu.vic.lineHasSprites) {
 
@@ -1122,7 +1125,7 @@ void mode6 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t
 
       BADLINE(x);
 
-      chr = cpu.vic.bitmapPtr[x * 8];
+      chr = bP[x * 8];
 
       x++;
 
@@ -1212,6 +1215,7 @@ void mode7 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t
   uint8_t chr;
   uint8_t x = 0;
   uint16_t pixel;
+  uint8_t * bP = cpu.vic.bitmapPtr + vc * 8 + cpu.vic.rc;
 
   if (cpu.vic.lineHasSprites) {
 
@@ -1219,7 +1223,7 @@ void mode7 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t
 
       BADLINE(x);
 
-      chr = cpu.vic.bitmapPtr[x * 8];
+      chr = bP[x * 8];
       x++;
 
       for (unsigned i = 0; i < 4; i++) {
@@ -1312,7 +1316,7 @@ const modes_t modes[8] = {mode0, mode1, mode2, mode3, mode4, mode5, mode6, mode7
 void vic_do(void) {
 
   uint16_t vc;
-  uint16_t fgcol, xscroll;
+  uint16_t xscroll;
   uint16_t *pe;
   uint16_t *p;
   uint16_t *spl;
@@ -1474,17 +1478,9 @@ void vic_do(void) {
 
   cpu.vic.fgcollision = 0;
 
- if (1 | !cpu.vic.idle)  {
+ if ( !cpu.vic.idle)  {
 
     uint8_t mode = (cpu.vic.ECM << 2) | (cpu.vic.BMM << 1) | cpu.vic.MCM;
-
-    if (cpu.vic.BMM) {
-      if (cpu.vic.ECM) {
-        cpu.vic.bitmapPtr = (uint8_t*) &cpu.RAM[cpu.vic.bank | ((((unsigned)(cpu.vic.R[0x18] & 0x08) * 0x400) + vc * 8) & 0xf9FF)] + cpu.vic.rc;
-      } else {
-        cpu.vic.bitmapPtr = (uint8_t*) &cpu.RAM[cpu.vic.bank | ((unsigned)(cpu.vic.R[0x18] & 0x08) * 0x400) | vc * 8] + cpu.vic.rc;
-      }
-    }
 
 #if 0
     static uint8_t omode = 99;
@@ -1578,7 +1574,7 @@ noDisplayIncRC:
     cpu.vic.idle = 1;
     cpu.vic.vcbase = vc;
   }
-  //Ist dies richtig ?? 
+  //Ist dies richtig ??
   if ((!cpu.vic.idle) || (cpu.vic.denLatch && (r >= 0x30) && (r <= 0xf7) && ( (r & 0x07) == cpu.vic.YSCROLL))) {
     cpu.vic.rc = (cpu.vic.rc + 1) & 0x07;
   }
@@ -1831,11 +1827,16 @@ void vic_write(uint32_t address, uint8_t value) {
 
   switch (address) {
     case 0x11 :
+	  cpu.vic.R[address] = value;
       cpu.vic.intRasterLine = (cpu.vic.intRasterLine & 0xff) | ((((uint16_t) value) << 1) & 0x100);
       if (cpu.vic.rasterLine == 0x30 ) cpu.vic.denLatch |= value & 0x10;
+
       cpu.vic.badline = (cpu.vic.denLatch && (cpu.vic.rasterLine >= 0x30) && (cpu.vic.rasterLine <= 0xf7) && ( (cpu.vic.rasterLine & 0x07) == (value & 0x07)));
 	  if (cpu.vic.badline) { cpu.vic.idle = 0;}
-      cpu.vic.R[address] = value;
+
+	  cpu.vic.bitmapPtr = (uint8_t*) &cpu.RAM[cpu.vic.bank | ((unsigned)(cpu.vic.R[0x18] & 0x08) * 0x400)];
+      if ((value & 0x60) == 0x60)  cpu.vic.bitmapPtr = (uint8_t*)((uintptr_t)cpu.vic.bitmapPtr & 0xf9ff);
+
       break;
     case 0x12 :
       cpu.vic.intRasterLine = (cpu.vic.intRasterLine & 0x100) | value;
