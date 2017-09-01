@@ -39,13 +39,19 @@
 #define PAL         1 //use 0 for NTSC
 #define FASTBOOT      1 //0 to disable fastboot
 #define EXACTTIMINGDURATION 1600ul //ms
+#ifndef M1N
+#define M1N 734544.2f
+#endif
+#ifndef M2N
+#define M2N 412155.4f
+#endif
 
 //
 // Do not edit values below this line
 //
 //Automatic values :
 #if PAL == 1
-#define CRYSTAL       17734475.0f
+#define CRYSTAL       M1N
 #define CLOCKSPEED      ( CRYSTAL / 18.0f) // 985248,61 Hz
 #define CYCLESPERRASTERLINE 63
 #define LINECNT       312 //Rasterlines
@@ -54,7 +60,7 @@
 #define NTSC        0
 
 #else
-#define CRYSTAL       14318180.0f
+#define CRYSTAL       M2N
 #define CLOCKSPEED      ( CRYSTAL / 14.0f) // 1022727,14 Hz
 #define CYCLESPERRASTERLINE 64
 #define LINECNT       263 //Rasterlines
@@ -81,10 +87,17 @@
 #define ISR_DAC           0
 #define ISR_USB           53
 
-#define ISR_PRIORITY_DAC      32
-#define ISR_PRIORITY_AUDIO      48
-#define ISR_PRIORITY_RASTERLINE   224
-#define ISR_PRIORITY_USB_OTG    112
+#ifndef I1P
+#define ISR_PRIORITY_DAC      200
+#define ISR_PRIORITY_AUDIO      180
+#define ISR_PRIORITY_RASTERLINE   32
+#define ISR_PRIORITY_USB_OTG    78
+#else
+#define ISR_PRIORITY_DAC      I1P
+#define ISR_PRIORITY_AUDIO      I2P
+#define ISR_PRIORITY_RASTERLINE   I3P
+#define ISR_PRIORITY_USB_OTG    I4P
+#endif
 
 
 
