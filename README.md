@@ -17,7 +17,7 @@ Features
 - Simple drive emulation included (load "whatever.prg" or load "$" )
 - Supports original joysticks
 - very small
-- A custom board is available which can be used for other purposes, too (mail me - 39$ incl. all parts but display & T3.6).
+- A custom board is available which can be used for other purposes, too (mail me - 39€/$ incl. all parts but display & T3.6).
 
 
 About
