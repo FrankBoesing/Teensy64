@@ -48,10 +48,18 @@
 #define SCREEN_HEIGHT (200+2*BORDER)
 #define SCREEN_WIDTH  TFT_WIDTH
 
+/* for later use
+struct tsprite {
+  uint8_t MC; //Mob Data Counter
+  uint8_t MCBase; //Mob Data Counter Base
+  uint8_t MobYexpand; //Y-Epansion FlipFlop
+};
+*/
+
 struct tvic {
-  unsigned long timeStart, frameCnt, neededTime;
-  int16_t intRasterLine; //Interruptsetting
-  int16_t rasterLine;
+  uint32_t timeStart, neededTime;
+  int intRasterLine; //Interruptsetting
+  int rasterLine;
   uint16_t bank;
   uint16_t vcbase;
   uint8_t rc;
@@ -65,7 +73,17 @@ struct tvic {
   int8_t spriteCycles0_2;
   int8_t spriteCycles3_7;
   int fgcollision;
+  
+  uint8_t * charsetPtrBase;
+  uint8_t * charsetPtr;
+  uint8_t * bitmapPtr;
+  uint16_t videomatrix;
 
+  uint16_t colors[15]; // translated ([palette]) colors
+  uint16_t palette[16];  
+  
+  MyIntervalTimer lineClock;
+  
   union {
     uint8_t R[0x40];
     struct {
@@ -103,20 +121,13 @@ struct tvic {
       uint8_t M7C: 4, : 4; // Spritecolor 7 $D02E
     };
   };
-
-  uint16_t videomatrix;
-  uint8_t * charsetPtrBase;
-  uint8_t * charsetPtr;
-  uint8_t * bitmapPtr;
-
-  uint16_t spriteLine[SCREEN_WIDTH + 24 * 3];
-  uint16_t palette[16];
-  uint16_t colors[16]; // translated ([palette]) colors
+  
+  //tsprite spriteInfo[8];//todo
+  uint16_t spriteLine[SCREEN_WIDTH + 24 * 2];
+  
   uint8_t lineMemChr[40];
   uint8_t lineMemCol[40];
   uint8_t COLORRAM[1024];
-  MyIntervalTimer lineClock;
-
 
 };
 

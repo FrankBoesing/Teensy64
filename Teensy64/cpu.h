@@ -80,8 +80,6 @@ struct tcpu {
   unsigned lineCycles;
   unsigned long lineStartTime;
 
- 
-  
   r_rarr_ptr_t plamap_r; //Memory-Mapping read
   w_rarr_ptr_t plamap_w; //Memory-Mapping write
   uint8_t _exrom:1, _game:1;
@@ -89,7 +87,7 @@ struct tcpu {
   tvic vic;
   tcia cia1;
   tcia cia2;
-  //CIAx c1, c2;
+
   union {
 	uint8_t RAM[RAMSIZE];
 	uint16_t RAM16[RAMSIZE/2];

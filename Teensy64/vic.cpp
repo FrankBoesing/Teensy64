@@ -35,17 +35,15 @@
 
 /*
   TODOs:
-  - FLD  - (OK 08/17)
-  - Sprite Stretching (requires "MOBcounter")
-  - FLI work (doubling badlines)
-  - DMA Delay (?)
-  - ...
-  -
   - Fix Bugs..
+  - FLD  - (OK 08/17) test this more..
+  - Sprite Stretching (requires "MOBcounter")
+  - BA Signal -> CPU
+  - xFLI
+  - ...
+  - DMA Delay (?) - needs partial rewrite (idle - > badline in middle of line. Is the 3.6 fast enough??)
   - optimize more
-*/
-
-
+*/  
 
 #include <DMAChannel.h>
 #include "cpu.h"
@@ -62,108 +60,7 @@
 #define MAXCYCLESSPRITES0_2       7
 #define MAXCYCLESSPRITES3_7        10
 #define MAXCYCLESSPRITES    (MAXCYCLESSPRITES0_2 + MAXCYCLESSPRITES3_7)
-/*
-  The VIC has 47 read/write registers for the processor to control its
-  functions:
 
-  #| Adr.  |Bit7|Bit6|Bit5|Bit4|Bit3|Bit2|Bit1|Bit0| Function
-  --+-------+----+----+----+----+----+----+----+----+------------------------
-  0| $d000 |                  M0X                  | X coordinate sprite 0
-  --+-------+---------------------------------------+------------------------
-  1| $d001 |                  M0Y                  | Y coordinate sprite 0
-  --+-------+---------------------------------------+------------------------
-  2| $d002 |                  M1X                  | X coordinate sprite 1
-  --+-------+---------------------------------------+------------------------
-  3| $d003 |                  M1Y                  | Y coordinate sprite 1
-  --+-------+---------------------------------------+------------------------
-  4| $d004 |                  M2X                  | X coordinate sprite 2
-  --+-------+---------------------------------------+------------------------
-  5| $d005 |                  M2Y                  | Y coordinate sprite 2
-  --+-------+---------------------------------------+------------------------
-  6| $d006 |                  M3X                  | X coordinate sprite 3
-  --+-------+---------------------------------------+------------------------
-  7| $d007 |                  M3Y                  | Y coordinate sprite 3
-  --+-------+---------------------------------------+------------------------
-  8| $d008 |                  M4X                  | X coordinate sprite 4
-  --+-------+---------------------------------------+------------------------
-  9| $d009 |                  M4Y                  | Y coordinate sprite 4
-  --+-------+---------------------------------------+------------------------
-  10| $d00a |                  M5X                  | X coordinate sprite 5
-  --+-------+---------------------------------------+------------------------
-  11| $d00b |                  M5Y                  | Y coordinate sprite 5
-  --+-------+---------------------------------------+------------------------
-  12| $d00c |                  M6X                  | X coordinate sprite 6
-  --+-------+---------------------------------------+------------------------
-  13| $d00d |                  M6Y                  | Y coordinate sprite 6
-  --+-------+---------------------------------------+------------------------
-  14| $d00e |                  M7X                  | X coordinate sprite 7
-  --+-------+---------------------------------------+------------------------
-  15| $d00f |                  M7Y                  | Y coordinate sprite 7
-  --+-------+----+----+----+----+----+----+----+----+------------------------
-  16| $d010 |M7X8|M6X8|M5X8|M4X8|M3X8|M2X8|M1X8|M0X8| MSBs of X coordinates
-  --+-------+----+----+----+----+----+----+----+----+------------------------
-  17| $d011 |RST8| ECM| BMM| DEN|RSEL|    YSCROLL   | Control register 1
-  --+-------+----+----+----+----+----+--------------+------------------------
-  18| $d012 |                 RASTER                | Raster counter
-  --+-------+---------------------------------------+------------------------
-  19| $d013 |                  LPX                  | Light pen X
-  --+-------+---------------------------------------+------------------------
-  20| $d014 |                  LPY                  | Light pen Y
-  --+-------+----+----+----+----+----+----+----+----+------------------------
-  21| $d015 | M7E| M6E| M5E| M4E| M3E| M2E| M1E| M0E| Sprite enabled
-  --+-------+----+----+----+----+----+----+----+----+------------------------
-  22| $d016 |  - |  - | RES| MCM|CSEL|    XSCROLL   | Control register 2
-  --+-------+----+----+----+----+----+----+----+----+------------------------
-  23| $d017 |M7YE|M6YE|M5YE|M4YE|M3YE|M2YE|M1YE|M0YE| Sprite Y expansion
-  --+-------+----+----+----+----+----+----+----+----+------------------------
-  24| $d018 |VM13|VM12|VM11|VM10|CB13|CB12|CB11|  - | Memory pointers
-  --+-------+----+----+----+----+----+----+----+----+------------------------
-  25| $d019 | IRQ|  - |  - |  - | ILP|IMMC|IMBC|IRST| Interrupt register
-  --+-------+----+----+----+----+----+----+----+----+------------------------
-  26| $d01a |  - |  - |  - |  - | ELP|EMMC|EMBC|ERST| Interrupt enabled
-  --+-------+----+----+----+----+----+----+----+----+------------------------
-  27| $d01b |M7DP|M6DP|M5DP|M4DP|M3DP|M2DP|M1DP|M0DP| Sprite data priority
-  --+-------+----+----+----+----+----+----+----+----+------------------------
-  28| $d01c |M7MC|M6MC|M5MC|M4MC|M3MC|M2MC|M1MC|M0MC| Sprite multicolor
-  --+-------+----+----+----+----+----+----+----+----+------------------------
-  29| $d01d |M7XE|M6XE|M5XE|M4XE|M3XE|M2XE|M1XE|M0XE| Sprite X expansion
-  --+-------+----+----+----+----+----+----+----+----+------------------------
-  30| $d01e | M7M| M6M| M5M| M4M| M3M| M2M| M1M| M0M| Sprite-sprite collision
-  --+-------+----+----+----+----+----+----+----+----+------------------------
-  31| $d01f | M7D| M6D| M5D| M4D| M3D| M2D| M1D| M0D| Sprite-data collision
-  --+-------+----+----+----+----+----+----+----+----+------------------------
-  32| $d020 |  - |  - |  - |  - |         EC        | Border color
-  --+-------+----+----+----+----+-------------------+------------------------
-  33| $d021 |  - |  - |  - |  - |        B0C        | Background color 0
-  --+-------+----+----+----+----+-------------------+------------------------
-  34| $d022 |  - |  - |  - |  - |        B1C        | Background color 1
-  --+-------+----+----+----+----+-------------------+------------------------
-  35| $d023 |  - |  - |  - |  - |        B2C        | Background color 2
-  --+-------+----+----+----+----+-------------------+------------------------
-  36| $d024 |  - |  - |  - |  - |        B3C        | Background color 3
-  --+-------+----+----+----+----+-------------------+------------------------
-  37| $d025 |  - |  - |  - |  - |        MM0        | Sprite multicolor 0
-  --+-------+----+----+----+----+-------------------+------------------------
-  38| $d026 |  - |  - |  - |  - |        MM1        | Sprite multicolor 1
-  --+-------+----+----+----+----+-------------------+------------------------
-  39| $d027 |  - |  - |  - |  - |        M0C        | Color sprite 0
-  --+-------+----+----+----+----+-------------------+------------------------
-  40| $d028 |  - |  - |  - |  - |        M1C        | Color sprite 1
-  --+-------+----+----+----+----+-------------------+------------------------
-  41| $d029 |  - |  - |  - |  - |        M2C        | Color sprite 2
-  --+-------+----+----+----+----+-------------------+------------------------
-  42| $d02a |  - |  - |  - |  - |        M3C        | Color sprite 3
-  --+-------+----+----+----+----+-------------------+------------------------
-  43| $d02b |  - |  - |  - |  - |        M4C        | Color sprite 4
-  --+-------+----+----+----+----+-------------------+------------------------
-  44| $d02c |  - |  - |  - |  - |        M5C        | Color sprite 5
-  --+-------+----+----+----+----+-------------------+------------------------
-  45| $d02d |  - |  - |  - |  - |        M6C        | Color sprite 6
-  --+-------+----+----+----+----+-------------------+------------------------
-  46| $d02e |  - |  - |  - |  - |        M7C        | Color sprite 7
-  --+-------+----+----+----+----+-------------------+------------------------
-
-*/
 
 /*****************************************************************************************************/
 /*****************************************************************************************************/
@@ -179,21 +76,23 @@ void fastFillLineNoSprites(uint16_t * p, const uint16_t * pe, const uint16_t col
 /*****************************************************************************************************/
 /*****************************************************************************************************/
 
-#define CHARSETPTR() cpu.vic.charsetPtr = cpu.vic.charsetPtrBase + cpu.vic.rc; //TODO: Besser integrieren
-
+#define SPRITENUM(data) (1 << ((data >> 8) & 0x07))
+#define CHARSETPTR() cpu.vic.charsetPtr = cpu.vic.charsetPtrBase + cpu.vic.rc;
 #define CYCLES(x) {if (cpu.vic.badline) {cia_clockt(x);} else {cpu_clock(x);} }
 
 #define BADLINE(x) {if (cpu.vic.badline) { \
       cpu.vic.lineMemChr[x] = cpu.RAM[cpu.vic.videomatrix + vc + x]; \
       cpu.vic.lineMemCol[x] = cpu.vic.COLORRAM[vc + x]; \
-      cia_clockt(1); \
+	  cia1_clock(1); \
+	  cia2_clock(1); \
     } else { \
       cpu_clock(1); \
     } \
   };
 
 #define SPRITEORFIXEDCOLOR() \
-  sprite = *spl++; \
+  sprite = *spl; \
+  *spl++ = 0; \
   if (sprite) { \
     *p++ = cpu.vic.palette[sprite & 0x0f];\
   } else { \
@@ -218,7 +117,7 @@ void fastFillLineNoSprites(uint16_t * p, const uint16_t * pe, const uint16_t col
 #endif
 
 /*****************************************************************************************************/
-void mode0 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t vc) {
+void mode0 (uint16_t *p, const uint16_t *pe, uint16_t *spl, const uint16_t vc) {
   // Standard-Textmodus(ECM/BMM/MCM=0/0/0)
   /*
     Standard-Textmodus (ECM / BMM / MCM = 0/0/0)
@@ -244,7 +143,7 @@ void mode0 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t
   uint8_t chr, pixel;
   uint16_t fgcol;
   uint16_t bgcol;
-  uint8_t x = 0;
+  uint16_t  x = 0;
 
   CHARSETPTR();
 
@@ -256,12 +155,14 @@ void mode0 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t
 
       chr = cpu.vic.charsetPtr[cpu.vic.lineMemChr[x] * 8];
       fgcol = cpu.vic.lineMemCol[x];
+	  x++;
       unsigned m = min(8, pe - p);
       for (unsigned i = 0; i < m; i++) {
         int sprite = *spl;
-
+		*spl++ = 0;
+		
         if (sprite) {     // Sprite: Ja
-          int spritenum = 1 << ( (sprite >> 8) & 0x07);
+		  int spritenum = SPRITENUM(sprite);
           int spritepixel = sprite & 0x0f;
 
           if (sprite & 0x4000) {   // Sprite: Hinter Text  MDP = 1
@@ -279,14 +180,10 @@ void mode0 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t
           pixel = (chr & 0x80) ? fgcol : cpu.vic.B0C;
         }
 
-        *p++ = cpu.vic.palette[pixel];
-        spl++;
+        *p++ = cpu.vic.palette[pixel];        
         chr = chr << 1;
 
       }
-
-      x++;
-
     } while (p < pe);
     PRINTOVERFLOWS
   } else { //Keine Sprites
@@ -297,7 +194,7 @@ void mode0 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t
 
       chr = cpu.vic.charsetPtr[cpu.vic.lineMemChr[x] * 8];
       fgcol = cpu.vic.palette[cpu.vic.lineMemCol[x]];
-	  bgcol = cpu.vic.palette[cpu.vic.B0C];
+	  bgcol = cpu.vic.colors[1];	  
       x++;
 
       *p++ = (chr & 0x80) ? fgcol : bgcol;
@@ -317,7 +214,7 @@ void mode0 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t
 
       chr = cpu.vic.charsetPtr[cpu.vic.lineMemChr[x] * 8];
       fgcol = cpu.vic.palette[cpu.vic.lineMemCol[x]];
-	  bgcol = cpu.vic.palette[cpu.vic.B0C];
+	  bgcol = cpu.vic.colors[1];
       x++;
 
       *p++ = (chr & 0x80) ? fgcol : bgcol; if (p >= pe) break;
@@ -335,7 +232,7 @@ void mode0 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t
 };
 
 /*****************************************************************************************************/
-void mode1 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t vc) {
+void mode1 (uint16_t *p, const uint16_t *pe, uint16_t *spl, const uint16_t vc) {
   /*
     Multicolor-Textmodus (ECM/BMM/MCM=0/0/1)
     Dieser Modus ermöglicht es, auf Kosten der horizontalen Auflösung vierfarbige Zeichen darzustellen.
@@ -395,7 +292,7 @@ void mode1 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t
         for (unsigned i = 0; i < m; i++) {
 
           int sprite = *spl;
-
+		  *spl++ = 0;
           if (sprite) {     // Sprite: Ja
 
             /*
@@ -408,7 +305,7 @@ void mode1 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t
               sobald beim Bildaufbau ein nicht transparentes Spritepixel und ein Vordergrundpixel ausgegeben wird.
 
             */
-            int spritenum = 1 << ((sprite >> 8) & 0x07);
+            int spritenum = SPRITENUM(sprite);
             pixel = sprite & 0x0f; //Hintergrundgrafik
             if (sprite & 0x4000) {   // MDP = 1
               if (chr & 0x80) { //Vordergrundpixel ist gesetzt
@@ -425,7 +322,6 @@ void mode1 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t
 
           *p++ = cpu.vic.palette[pixel];
 
-          spl++;
           chr = chr << 1;
         }
 
@@ -437,9 +333,9 @@ void mode1 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t
           chr = chr << 2;
 
           int sprite = *spl;
+		  *spl++ = 0;
           if (sprite) {    // Sprite: Ja
-            int spritenum = 1 << ((sprite >> 8) & 0x07);
-
+            int spritenum = SPRITENUM(sprite);
 			pixel = sprite & 0x0f; //Hintergrundgrafik
             if (sprite & 0x4000) {  // MDP = 1
 
@@ -458,11 +354,12 @@ void mode1 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t
           }
           *p++ = cpu.vic.palette[pixel];
           if (p >= pe) break;
-          spl++;
+
           sprite = *spl;
+		  *spl++ = 0;
           //Das gleiche nochmal für das nächste Pixel
           if (sprite) {    // Sprite: Ja
-            int spritenum = 1 << ((sprite >> 8) & 0x07);
+            int spritenum = SPRITENUM(sprite);
 			pixel =  sprite & 0x0f; //Hintergrundgrafik
             if (sprite & 0x4000) {  // MDP = 1
 
@@ -477,7 +374,6 @@ void mode1 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t
             pixel = colors[c];
           }
           *p++ = cpu.vic.palette[pixel];
-          spl++;
 
         }
 
@@ -487,19 +383,17 @@ void mode1 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t
     PRINTOVERFLOWS
   } else { //Keine Sprites
 
-    bgcol = cpu.vic.palette[cpu.vic.B0C];
-
-    colors[0] = bgcol;
-    colors[1] = cpu.vic.palette[cpu.vic.R[0x22]];
-    colors[2] = cpu.vic.palette[cpu.vic.R[0x23]];
-
     while (p < pe - 8) {
 
       BADLINE(x);
+	  
+      bgcol = cpu.vic.colors[1];
+      colors[0] = bgcol;
+	  colors[1] = cpu.vic.colors[2];
+  	  colors[2] = cpu.vic.colors[3];
 
       chr = cpu.vic.charsetPtr[cpu.vic.lineMemChr[x] * 8];
       int c = cpu.vic.lineMemCol[x];
-
       x++;
 
       if ((c & 0x08) == 0) { //Zeichen ist HIRES
@@ -526,6 +420,11 @@ void mode1 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t
     while (p < pe) {
 
       BADLINE(x);
+
+	  bgcol = cpu.vic.colors[1];
+      colors[0] = bgcol;
+	  colors[1] = cpu.vic.colors[2];
+  	  colors[2] = cpu.vic.colors[3];
 
       chr = cpu.vic.charsetPtr[cpu.vic.lineMemChr[x] * 8];
       int c = cpu.vic.lineMemCol[x];
@@ -555,8 +454,9 @@ void mode1 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t
   }
   while (x<40) {BADLINE(x); x++;}
 }
+
 /*****************************************************************************************************/
-void mode2 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t vc) {
+void mode2 (uint16_t *p, const uint16_t *pe, uint16_t *spl, const uint16_t vc) {
   /*
      Standard-Bitmap-Modus (ECM / BMM / MCM = 0/1/0) ("HIRES")
      In diesem Modus (wie in allen Bitmap-Modi) liest der VIC die Grafikdaten aus einer 320×200-Bitmap,
@@ -605,7 +505,7 @@ void mode2 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t
       for (unsigned i = 0; i < m; i++) {
 
         int sprite = *spl;
-
+        *spl++ = 0;
         chr = chr << 1;
         if (sprite) {     // Sprite: Ja
           /*
@@ -618,7 +518,7 @@ void mode2 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t
              sobald beim Bildaufbau ein nicht transparentes Spritepixel und ein Vordergrundpixel ausgegeben wird.
 
           */
-          int spritenum = 1 << ((sprite >> 8) & 0x07);
+          int spritenum = SPRITENUM(sprite);
           pixel = sprite & 0x0f; //Hintergrundgrafik
           if (sprite & 0x4000) {   // MDP = 1
             if (chr & 0x80) { //Vordergrundpixel ist gesetzt
@@ -634,7 +534,6 @@ void mode2 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t
         }
 
         *p++ = cpu.vic.palette[pixel];
-        spl++;
 
       }
     } while (p < pe);
@@ -686,7 +585,7 @@ void mode2 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t
   while (x<40) {BADLINE(x); x++;}
 }
 /*****************************************************************************************************/
-void mode3 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t vc) {
+void mode3 (uint16_t *p, const uint16_t *pe, uint16_t *spl, const uint16_t vc) {
   /*
     Multicolor-Bitmap-Modus (ECM/BMM/MCM=0/1/1)
 
@@ -739,8 +638,9 @@ void mode3 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t
         chr = chr << 2;
 
         int sprite = *spl;
+		*spl++ = 0;
         if (sprite) {    // Sprite: Ja
-          int spritenum = 1 << ((sprite >> 8) & 0x07);
+          int spritenum = SPRITENUM(sprite);
           pixel = sprite & 0x0f; //Hintergrundgrafik
           if (sprite & 0x4000) {  // MDP = 1
             if (c & 0x02) {  //Vordergrundpixel ist gesetzt
@@ -756,11 +656,12 @@ void mode3 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t
 
         *p++ = cpu.vic.palette[pixel];
         if (p >= pe) break;
-        spl++;
-        sprite = *spl;
 
+        sprite = *spl;
+        *spl++ = 0;
+		
         if (sprite) {    // Sprite: Ja
-          int spritenum = 1 << ((sprite >> 8) & 0x07);
+          int spritenum = SPRITENUM(sprite);
           pixel = sprite & 0x0f; //Hintergrundgrafik
           if (sprite & 0x4000) {  // MDP = 1
 
@@ -776,7 +677,6 @@ void mode3 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t
         }
 
         *p++ = cpu.vic.palette[pixel];
-        spl++;
 
       }
 
@@ -786,13 +686,13 @@ void mode3 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t
   } else { //Keine Sprites
 
     uint16_t colors[4];
-    colors[0] = cpu.vic.palette[cpu.vic.B0C];
 
     while (p < pe - 8) {
 
       BADLINE(x);
 
       uint8_t t = cpu.vic.lineMemChr[x];
+	  colors[0] = cpu.vic.colors[1];
       colors[1] = cpu.vic.palette[t >> 4];//10
       colors[2] = cpu.vic.palette[t & 0x0f]; //01
       colors[3] = cpu.vic.palette[cpu.vic.lineMemCol[x]];
@@ -810,6 +710,7 @@ void mode3 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t
       BADLINE(x);
 
       uint8_t t = cpu.vic.lineMemChr[x];
+	  colors[0] = cpu.vic.colors[1];
       colors[1] = cpu.vic.palette[t >> 4];//10
       colors[2] = cpu.vic.palette[t & 0x0f]; //01
       colors[3] = cpu.vic.palette[cpu.vic.lineMemCol[x]];
@@ -827,7 +728,7 @@ void mode3 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t
   while (x<40) {BADLINE(x); x++;}
 }
 /*****************************************************************************************************/
-void mode4 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t vc) {
+void mode4 (uint16_t *p, const uint16_t *pe, uint16_t *spl, const uint16_t vc) {
   //ECM-Textmodus (ECM/BMM/MCM=1/0/0)
   /*
     Dieser Textmodus entspricht dem Standard-Textmodus, erlaubt es aber, für
@@ -873,9 +774,10 @@ void mode4 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t
       for (unsigned i = 0; i < m; i++) {
 
         int sprite = *spl;
-
+        *spl++ = 0;
+		
         if (sprite) {     // Sprite: Ja
-          int spritenum = 1 << ((sprite >> 8) & 0x07);
+          int spritenum = SPRITENUM(sprite);
           if (sprite & 0x4000) {   // Sprite: Hinter Text
             if (chr & 0x80) {
               cpu.vic.fgcollision |= spritenum;
@@ -888,7 +790,7 @@ void mode4 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t
         } else {                // Kein Sprite
           pixel = (chr & 0x80) ? fgcol : bgcol;
         }
-        spl++;
+
         chr = chr << 1;
         *p++ = cpu.vic.palette[pixel];
       }
@@ -945,7 +847,7 @@ void mode4 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t
 /* Ungültige Modi ************************************************************************************/
 /*****************************************************************************************************/
 
-void mode5 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t vc) {
+void mode5 (uint16_t *p, const uint16_t *pe, uint16_t *spl, const uint16_t vc) {
   /*
     Ungültiger Textmodus (ECM/BMM/MCM=1/0/1)
 
@@ -984,7 +886,8 @@ void mode5 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t
         for (unsigned i = 0; i < m; i++) {
 
           int sprite = *spl;
-
+		  *spl++ = 0;
+		  
           if (sprite) {     // Sprite: Ja
 
             /*
@@ -997,7 +900,7 @@ void mode5 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t
               sobald beim Bildaufbau ein nicht transparentes Spritepixel und ein Vordergrundpixel ausgegeben wird.
 
             */
-            int spritenum = 1 << ((sprite >> 8) & 0x07);
+            int spritenum = SPRITENUM(sprite);
             pixel = sprite & 0x0f; //Hintergrundgrafik
 
             if (sprite & 0x4000) {   // MDP = 1
@@ -1015,7 +918,6 @@ void mode5 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t
 
           *p++ = cpu.vic.palette[pixel];
 
-          spl++;
           chr = chr << 1;
         }
 
@@ -1027,8 +929,10 @@ void mode5 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t
           chr = chr << 2;
 
           int sprite = *spl;
+		  *spl++ = 0;
+		  
           if (sprite) {    // Sprite: Ja
-            int spritenum = 1 << ((sprite >> 8) & 0x07);
+            int spritenum = SPRITENUM(sprite);
             pixel = sprite & 0x0f; //Hintergrundgrafik
             if (sprite & 0x4000) {  // MDP = 1
 
@@ -1046,11 +950,12 @@ void mode5 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t
           }
           *p++ = cpu.vic.palette[pixel];
           if (p >= pe) break;
-          spl++;
+		  
           sprite = *spl;
+		  *spl++ = 0;
           //Das gleiche nochmal für das nächste Pixel
           if (sprite) {    // Sprite: Ja
-            int spritenum = 1 << ((sprite >> 8) & 0x07);
+            int spritenum = SPRITENUM(sprite);
             pixel = sprite & 0x0f; //Hintergrundgrafik
             if (sprite & 0x4000) {  // MDP = 1
               if (chr & 0x80) { //Vordergrundpixel ist gesetzt
@@ -1064,7 +969,6 @@ void mode5 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t
             pixel = 0;
           }
           *p++ = cpu.vic.palette[pixel];
-          spl++;
 
         }
 
@@ -1101,7 +1005,7 @@ void mode5 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t
   while (x<40) {BADLINE(x); x++;}
 }
 /*****************************************************************************************************/
-void mode6 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t vc) {
+void mode6 (uint16_t *p, const uint16_t *pe, uint16_t *spl, const uint16_t vc) {
   /*
     Ungültiger Bitmap-Modus 1 (ECM/BMM/MCM=1/1/0)
 
@@ -1133,7 +1037,8 @@ void mode6 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t
       for (unsigned i = 0; i < m; i++) {
 
         int sprite = *spl;
-
+        *spl++ = 0;
+		
         chr = chr << 1;
         if (sprite) {     // Sprite: Ja
           /*
@@ -1146,7 +1051,7 @@ void mode6 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t
              sobald beim Bildaufbau ein nicht transparentes Spritepixel und ein Vordergrundpixel ausgegeben wird.
 
           */
-          int spritenum = 1 << ((sprite >> 8) & 0x07);
+          int spritenum = SPRITENUM(sprite);
           pixel = sprite & 0x0f; //Hintergrundgrafik
           if (sprite & 0x4000) {   // MDP = 1
             if (chr & 0x80) { //Vordergrundpixel ist gesetzt
@@ -1162,7 +1067,6 @@ void mode6 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t
         }
 
         *p++ = cpu.vic.palette[pixel];
-        spl++;
 
       }
 
@@ -1197,7 +1101,7 @@ void mode6 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t
   while (x<40) {BADLINE(x); x++;}
 }
 /*****************************************************************************************************/
-void mode7 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t vc) {
+void mode7 (uint16_t *p, const uint16_t *pe, uint16_t *spl, const uint16_t vc) {
   /*
     Ungültiger Bitmap-Modus 2 (ECM/BMM/MCM=1/1/1)
 
@@ -1232,8 +1136,10 @@ void mode7 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t
         chr = chr << 2;
 
         int sprite = *spl;
+		*spl++ = 0;
+		
         if (sprite) {    // Sprite: Ja
-          int spritenum = 1 << ((sprite >> 8) & 0x07);
+          int spritenum = SPRITENUM(sprite);
           pixel = sprite & 0x0f;//Hintergrundgrafik
           if (sprite & 0x4000) {  // MDP = 1
 
@@ -1250,11 +1156,12 @@ void mode7 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t
 
         *p++ = cpu.vic.palette[pixel];
         if (p >= pe) break;
-        spl++;
+       
         sprite = *spl;
-
+        *spl++ = 0;
+		
         if (sprite) {    // Sprite: Ja
-          int spritenum = 1 << ((sprite >> 8) & 0x07);
+          int spritenum = SPRITENUM(sprite);
           pixel = sprite & 0x0f;//Hintergrundgrafik
           if (sprite & 0x4000) {  // MDP = 1
 
@@ -1270,7 +1177,6 @@ void mode7 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t
         }
 
         *p++ = cpu.vic.palette[pixel];
-        spl++;
 
       }
 
@@ -1309,7 +1215,7 @@ void mode7 (uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t
 /*****************************************************************************************************/
 /*****************************************************************************************************/
 
-typedef void (*modes_t)( uint16_t *p, const uint16_t *pe, const uint16_t *spl, const uint16_t vc ); //Funktionspointer
+typedef void (*modes_t)( uint16_t *p, const uint16_t *pe, uint16_t *spl, const uint16_t vc ); //Funktionspointer
 const modes_t modes[8] = {mode0, mode1, mode2, mode3, mode4, mode5, mode6, mode7};
 
 
@@ -1337,7 +1243,7 @@ void vic_do(void) {
     unsigned long m = micros();
     cpu.vic.neededTime = (m - cpu.vic.timeStart);
     cpu.vic.timeStart = m;
-    cpu.vic.lineClock.setInterval(LINETIMER_DEFAULT_FREQ - ((float)cpu.vic.neededTime / (float)LINECNT - LINETIMER_DEFAULT_FREQ ));
+    cpu.vic.lineClock.setIntervalFast(LINETIMER_DEFAULT_FREQ - ((float)cpu.vic.neededTime / (float)LINECNT - LINETIMER_DEFAULT_FREQ ));
 
     cpu.vic.rasterLine = 0;
     cpu.vic.vcbase = 0;
@@ -1379,9 +1285,10 @@ void vic_do(void) {
      Bad-Line-Zustand vorliegt, wird zusätzlich RC auf Null gesetzt.
   */
 
-  cpu.vic.badline = (cpu.vic.denLatch && (r >= 0x30) && (r <= 0xf7) && ( (r & 0x07) == cpu.vic.YSCROLL));
-
   vc = cpu.vic.vcbase;
+  
+  cpu.vic.badline = (cpu.vic.denLatch && (r >= 0x30) && (r <= 0xf7) && ( (r & 0x07) == cpu.vic.YSCROLL));
+  
   if (cpu.vic.badline) {
     cpu.vic.idle = 0;
     cpu.vic.rc = 0;
@@ -1434,7 +1341,7 @@ void vic_do(void) {
   cpu_clock(6); //left screenborder, now 40 max cycles left.
 
   if (cpu.vic.borderFlag) {
-    fastFillLineNoSprites(p, pe, cpu.vic.palette[cpu.vic.EC]);
+    fastFillLineNoSprites(p, pe, cpu.vic.colors[0]);
     goto noDisplayIncRC ;
   }
 
@@ -1454,7 +1361,7 @@ void vic_do(void) {
   xscroll = cpu.vic.XSCROLL;
 
   if (xscroll > 0) {
-    uint16_t col = cpu.vic.palette[cpu.vic.EC];
+    uint16_t col = cpu.vic.colors[0];
 
     if (!cpu.vic.CSEL) {
       cpu_clock(1);
@@ -1520,7 +1427,7 @@ void vic_do(void) {
 
   if (!cpu.vic.CSEL) {
     cpu_clock(1);
-    uint16_t col = cpu.vic.palette[cpu.vic.EC];
+    uint16_t col = cpu.vic.colors[0];
     p = &screen[r - FIRSTDISPLAYLINE][0];
 
 #if 0
@@ -1583,16 +1490,18 @@ noDisplayIncRC:
   /*****************************************************************************************************/
   /* Sprites *******************************************************************************************/
   /*****************************************************************************************************/
-#define SPRITENUM(data) (1 << ((data >> 8) & 0x07)
 
   cpu.vic.spriteCycles0_2 = 0;
   cpu.vic.spriteCycles3_7 = 0;
 
+#if 0 //Debug clear spriteline
   if (cpu.vic.lineHasSprites) {
     memset(cpu.vic.spriteLine, 0, sizeof(cpu.vic.spriteLine) );
-    cpu.vic.lineHasSprites = 0;
   }
-
+#else
+  cpu.vic.lineHasSprites = 0;
+#endif
+	
   uint32_t spriteYCheck = cpu.vic.R[0x15]; //Sprite enabled Register
 
   if (spriteYCheck) {
@@ -1782,7 +1691,7 @@ void fastFillLineNoSprites(uint16_t * p, const uint16_t * pe, const uint16_t col
   while ( p < pe ) {
     *p++ = col;
   }
-
+  memset(cpu.vic.spriteLine, 0, sizeof(cpu.vic.spriteLine) );
   CYCLES(40);
 }
 
@@ -1818,7 +1727,10 @@ void vic_adrchange(void) {
       cpu.vic.charsetPtrBase = &cpu.RAM[charsetAddr * 0x400 + cpu.vic.bank] ;
   } else
     cpu.vic.charsetPtrBase = &cpu.RAM[charsetAddr * 0x400 + cpu.vic.bank];
-
+  
+  cpu.vic.bitmapPtr = (uint8_t*) &cpu.RAM[cpu.vic.bank | ((r18 & 0x08) * 0x400)];
+  if ((cpu.vic.R[0x11] & 0x60) == 0x60)  cpu.vic.bitmapPtr = (uint8_t*)((uintptr_t)cpu.vic.bitmapPtr & 0xf9ff);
+  
 }
 /*****************************************************************************************************/
 void vic_write(uint32_t address, uint8_t value) {
@@ -1832,11 +1744,13 @@ void vic_write(uint32_t address, uint8_t value) {
       if (cpu.vic.rasterLine == 0x30 ) cpu.vic.denLatch |= value & 0x10;
 
       cpu.vic.badline = (cpu.vic.denLatch && (cpu.vic.rasterLine >= 0x30) && (cpu.vic.rasterLine <= 0xf7) && ( (cpu.vic.rasterLine & 0x07) == (value & 0x07)));
-	  if (cpu.vic.badline) { cpu.vic.idle = 0;}
-
-	  cpu.vic.bitmapPtr = (uint8_t*) &cpu.RAM[cpu.vic.bank | ((unsigned)(cpu.vic.R[0x18] & 0x08) * 0x400)];
-      if ((value & 0x60) == 0x60)  cpu.vic.bitmapPtr = (uint8_t*)((uintptr_t)cpu.vic.bitmapPtr & 0xf9ff);
-
+	  
+	  if (cpu.vic.badline) { 
+		cpu.vic.idle = 0;		
+	  } 
+      
+	  vic_adrchange();
+	  
       break;
     case 0x12 :
       cpu.vic.intRasterLine = (cpu.vic.intRasterLine & 0x100) | value;
@@ -1873,7 +1787,7 @@ void vic_write(uint32_t address, uint8_t value) {
       break;
     case 0x20 ... 0x2E:
       cpu.vic.R[address] = value & 0x0f;
-      // cpu.vic.colors[address - 0x20] = cpu.vic.palette[value & 0x0f];
+      cpu.vic.colors[address - 0x20] = cpu.vic.palette[value & 0x0f];
       break;
     case 0x2F ... 0x3F:
       break;

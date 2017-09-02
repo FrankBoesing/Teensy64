@@ -39,19 +39,13 @@
 #define PAL         1 //use 0 for NTSC
 #define FASTBOOT      1 //0 to disable fastboot
 #define EXACTTIMINGDURATION 1600ul //ms
-#ifndef M1N
-#define M1N 734544.2f
-#endif
-#ifndef M2N
-#define M2N 412155.4f
-#endif
 
 //
 // Do not edit values below this line
 //
 //Automatic values :
 #if PAL == 1
-#define CRYSTAL       M1N
+#define CRYSTAL       17734475.0f
 #define CLOCKSPEED      ( CRYSTAL / 18.0f) // 985248,61 Hz
 #define CYCLESPERRASTERLINE 63
 #define LINECNT       312 //Rasterlines
@@ -60,7 +54,7 @@
 #define NTSC        0
 
 #else
-#define CRYSTAL       M2N
+#define CRYSTAL       14318180.0f
 #define CLOCKSPEED      ( CRYSTAL / 14.0f) // 1022727,14 Hz
 #define CYCLESPERRASTERLINE 64
 #define LINECNT       263 //Rasterlines
@@ -87,17 +81,10 @@
 #define ISR_DAC           0
 #define ISR_USB           53
 
-#ifndef I1P
-#define ISR_PRIORITY_DAC      200
-#define ISR_PRIORITY_AUDIO      180
-#define ISR_PRIORITY_RASTERLINE   32
-#define ISR_PRIORITY_USB_OTG    78
-#else
-#define ISR_PRIORITY_DAC      I1P
-#define ISR_PRIORITY_AUDIO      I2P
-#define ISR_PRIORITY_RASTERLINE   I3P
-#define ISR_PRIORITY_USB_OTG    I4P
-#endif
+#define ISR_PRIORITY_DAC      32
+#define ISR_PRIORITY_AUDIO      48
+#define ISR_PRIORITY_RASTERLINE   224
+#define ISR_PRIORITY_USB_OTG    112
 
 
 
@@ -146,27 +133,25 @@ digitalWriteFast(PIN_SERIAL_DATA, (~value & 0x20)); \ //PTA15 IEC DATA 5
 
 
 #define PIN_JOY1_BTN    24 //PTE26
-#define PIN_JOY1_1       0 //PTB16
-#define PIN_JOY1_2       1 //PTB17
-#define PIN_JOY1_3      29 //PTB18
-#define PIN_JOY1_4      30 //PTB19
+#define PIN_JOY1_1       0 //PTB16 up
+#define PIN_JOY1_2       1 //PTB17 down
+#define PIN_JOY1_3      29 //PTB18 left
+#define PIN_JOY1_4      30 //PTB19 right
 #define PIN_JOY1_A1     A14
 #define PIN_JOY1_A2     A15
 
 #define PIN_JOY2_BTN     5 //PTD7
-#define PIN_JOY2_1       2 //PTD0
-#define PIN_JOY2_2       7 //PTD2
-#define PIN_JOY2_3       8 //PTD3
-#define PIN_JOY2_4       6 //PTD4
+#define PIN_JOY2_1       2 //PTD0 up
+#define PIN_JOY2_2       7 //PTD2 down
+#define PIN_JOY2_3       8 //PTD3 left 
+#define PIN_JOY2_4       6 //PTD4 right
 #define PIN_JOY2_A1     A12
 #define PIN_JOY2_A2     A13
 
-#define JOYSTICK1() (((~GPIOB_PDIR >> 16) & 0x0f) | (((~GPIOE_PDIR >> 26) & 0x01) << 4)) //joystick hoch, runter, links, rechts, feuer
-#define JOYSTICK2   ({uint32_t v = GPIOD_PDIR;v =( (~v & 0x01) | ((~v & 0x1c) >> 1) | ((~v & 0x80) >> 3) ) & 0x1f;})  // PTD0, PTD2, PTD3, PTD4, PTD7
+#define JOYSTICK1() ({uint32_t v = GPIOD_PDIR;v =( (~v & 0x01) | ((~v & 0x1c) >> 1) | ((~v & 0x80) >> 3) ) & 0x1f;})  // PTD0, PTD2, PTD3, PTD4, PTD7
+#define JOYSTICK2   (((~GPIOB_PDIR >> 16) & 0x0f) | (((~GPIOE_PDIR >> 26) & 0x01) << 4))
 
-
-
-#if 0 // userport
+#if 0 // userport board v.01 (deprecated)
 #define PIN_PA2_2        3
 #define PIN_PB2_0       15
 #define PIN_PB2_1       22
@@ -185,3 +170,4 @@ digitalWriteFast(PIN_SERIAL_DATA, (~value & 0x20)); \ //PTA15 IEC DATA 5
 #endif
 
 #endif
+ 
