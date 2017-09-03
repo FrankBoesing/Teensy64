@@ -2,6 +2,8 @@
 # Teensy64
 Commodore C64 Emulation on a [Teensy 3.6](https://www.pjrc.com/store/teensy36.html) Microcontroller
 
+Please read the [forum](https://forum.pjrc.com/threads/46168-Commodore-C64-Emulation-on-a-Teensy-3-6-Microcontroller) for more detailed information.
+
 ![Teensy64](https://github.com/FrankBoesing/Teensy64/blob/master/extras/logo201707.png?raw=true)
 
 [![Video](http://img.youtube.com/vi/CjijgL0VC6k/0.jpg)](https://www.youtube.com/watch?v=CjijgL0VC6k "C64 Emulation early demo")
