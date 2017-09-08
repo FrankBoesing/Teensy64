@@ -192,11 +192,7 @@ void initMachine() {
 
   cpu.vic.lineClock.begin( oneRasterLine, LINETIMER_DEFAULT_FREQ);
   cpu.vic.lineClock.priority( ISR_PRIORITY_RASTERLINE );
-#if 0
-    NVIC_SET_PRIORITY(ISR_DAC, ISR_PRIORITY_DAC); //dac
-    NVIC_SET_PRIORITY(ISR_USB, ISR_PRIORITY_USB_OTG); //usb
-    NVIC_SET_PRIORITY(IRQ_SOFTWARE, ISR_PRIORITY_AUDIO); //Audio - reSID
-#endif
+
   attachInterrupt(digitalPinToInterrupt(PIN_RESET), resetMachine, RISING);
 
   listInterrupts();

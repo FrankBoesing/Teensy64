@@ -78,13 +78,9 @@
 //#define AUDIOSAMPLERATE     ((int)CLOCKSPEED / 64)// (~15kHz)
 //#define AUDIOSAMPLERATE     (LINEFREQ * 2)// (~15kHz)
 
-#define ISR_DAC           0
-#define ISR_USB           53
 
-#define ISR_PRIORITY_DAC      32
-#define ISR_PRIORITY_AUDIO      48
-#define ISR_PRIORITY_RASTERLINE   224
-#define ISR_PRIORITY_USB_OTG    112
+#define ISR_PRIORITY_RASTERLINE   208
+
 
 
 
@@ -131,43 +127,26 @@ digitalWriteFast(PIN_SERIAL_DATA, (~value & 0x20)); \ //PTA15 IEC DATA 5
   (((GPIOA_PDIR >> 14) & 0x03) << 6)
 #endif
 
+#define PIN_JOY1_BTN     5 //PTD7
+#define PIN_JOY1_1       2 //PTD0 up
+#define PIN_JOY1_2       7 //PTD2 down
+#define PIN_JOY1_3       8 //PTD3 left 
+#define PIN_JOY1_4       6 //PTD4 right
+#define PIN_JOY1_A1     A12
+#define PIN_JOY1_A2     A13
 
-#define PIN_JOY1_BTN    24 //PTE26
-#define PIN_JOY1_1       0 //PTB16 up
-#define PIN_JOY1_2       1 //PTB17 down
-#define PIN_JOY1_3      29 //PTB18 left
-#define PIN_JOY1_4      30 //PTB19 right
-#define PIN_JOY1_A1     A14
-#define PIN_JOY1_A2     A15
-
-#define PIN_JOY2_BTN     5 //PTD7
-#define PIN_JOY2_1       2 //PTD0 up
-#define PIN_JOY2_2       7 //PTD2 down
-#define PIN_JOY2_3       8 //PTD3 left 
-#define PIN_JOY2_4       6 //PTD4 right
-#define PIN_JOY2_A1     A12
-#define PIN_JOY2_A2     A13
+#define PIN_JOY2_BTN    24 //PTE26
+#define PIN_JOY2_1       0 //PTB16 up
+#define PIN_JOY2_2       1 //PTB17 down
+#define PIN_JOY2_3      29 //PTB18 left
+#define PIN_JOY2_4      30 //PTB19 right
+#define PIN_JOY2_A1     A14
+#define PIN_JOY2_A2     A15
 
 #define JOYSTICK1() ({uint32_t v = GPIOD_PDIR;v =( (~v & 0x01) | ((~v & 0x1c) >> 1) | ((~v & 0x80) >> 3) ) & 0x1f;})  // PTD0, PTD2, PTD3, PTD4, PTD7
 #define JOYSTICK2   (((~GPIOB_PDIR >> 16) & 0x0f) | (((~GPIOE_PDIR >> 26) & 0x01) << 4))
 
-#if 0 // userport board v.01 (deprecated)
-#define PIN_PA2_2        3
-#define PIN_PB2_0       15
-#define PIN_PB2_1       22
-#define PIN_PB2_2       23
-#define PIN_PB2_3        9
-#define PIN_PB2_4       10
-#define PIN_PB2_6       11
-#define PIN_PB2_7       12
-#define PIN_PB2_5       13
-#define PIN_CNT1        16
-#define PIN_CNT2        19
-#define PIN_SP1         17
-#define PIN_SP2         18
-#define PIN_PC2         35
-#define PIN_FLAG2       36
-#endif
+
 
 #endif
  

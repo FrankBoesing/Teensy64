@@ -438,5 +438,8 @@ void resetCia2(void) {
   pinMode(PIN_SERIAL_ATN, OUTPUT_OPENDRAIN);  //ATN OUT (CIA2 PA3 OUT)
   pinMode(PIN_SERIAL_CLK, OUTPUT_OPENDRAIN);  //CLK   (CIA2 PA6:IN PA4: OUT)
   pinMode(PIN_SERIAL_DATA, OUTPUT_OPENDRAIN); //DATA  (CIA2 PA7:IN PA5: OUT)
+  digitalWriteFast(PIN_SERIAL_ATN, 1);
+  digitalWriteFast(PIN_SERIAL_CLK, 1);
+  digitalWriteFast(PIN_SERIAL_DATA, 1);
 
 }

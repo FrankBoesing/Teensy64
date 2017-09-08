@@ -1,8 +1,8 @@
 /*
-    Copyright Mike Chambers, Frank Bösing, 2017	
+    Copyright Mike Chambers, Frank Bösing, 2017
     Parts of this file are based on "Fake6502 CPU emulator core v1.1" by Mike Chambers
-	
-	
+
+
 	This file is part of Teensy64.
 
     Teensy64 is free software: you can redistribute it and/or modify
@@ -32,7 +32,7 @@
 
     Sie sollten eine Kopie der GNU General Public License zusammen mit diesem
     Programm erhalten haben. Wenn nicht, siehe <http://www.gnu.org/licenses/>.
-		
+
 */
 
 /* Fake6502 CPU emulator core v1.1 *******************
@@ -80,8 +80,6 @@
 #define overflowcalc(n, m, o) { if (((n) ^ (uint16_t)(m)) & ((n) ^ (o)) & 0x0080) setoverflow(); else clearoverflow(); }
 
 #define saveaccum(n) cpu.a = (uint8_t)((n) & 0x00FF)
-
-#define dummyread 	{ read6502(read6502(cpu.pc) | (read6502(cpu.pc + 1) << 8)); }
 
 #define UNSUPPORTED { Serial.println("Unsupported Opcode"); while(1){;} }
 
@@ -173,7 +171,7 @@ INLINEOP void abso() { //absolute
 	cpu.pc += 2;
 }
 
-INLINEOP void absx() { //absolute,X      
+INLINEOP void absx() { //absolute,X
 	cpu.ea = (read6502(cpu.pc) | (read6502(cpu.pc + 1) << 8)) + cpu.x;
 	cpu.pc += 2;
 }
@@ -182,7 +180,7 @@ INLINEOP void absx_t() { //absolute,X with extra cycle
 	uint16_t h = read6502(cpu.pc) + cpu.x;
 	if (h & 0x100) cpu.ticks += 1;
 	cpu.ea = h + (read6502(cpu.pc + 1) << 8);
-	cpu.pc += 2; 
+	cpu.pc += 2;
 }
 
 INLINEOP void absy() { //absolute,Y
@@ -270,63 +268,63 @@ KIL = JAM, HLT
 }
 
 
-INLINEOP void _adc(unsigned data) {	
+INLINEOP void _adc(unsigned data) {
 	unsigned tempval = data;
 	unsigned temp;
     if (cpu.cpustatus & FLAG_DECIMAL) {
 	  	temp = (cpu.a & 0x0f) + (tempval & 0x0f) + (cpu.cpustatus & FLAG_CARRY);
 		if (temp > 9) temp += 6;
-		if (temp <= 0x0f) 
+		if (temp <= 0x0f)
 			temp = (temp & 0xf) + (cpu.a & 0xf0) + (tempval & 0xf0);
-		else 
+		else
 		    temp = (temp & 0xf) + (cpu.a & 0xf0) + (tempval & 0xf0) + 0x10;
-		if (!((cpu.a + tempval + (cpu.cpustatus & FLAG_CARRY)) & 0xff)) 
+		if (!((cpu.a + tempval + (cpu.cpustatus & FLAG_CARRY)) & 0xff))
 			setzero();
-		else 
+		else
 			clearzero();
 		signcalc(temp);
-		if (((cpu.a ^ temp) & 0x80) && !((cpu.a ^ tempval) & 0x80)) 
+		if (((cpu.a ^ temp) & 0x80) && !((cpu.a ^ tempval) & 0x80))
 			setoverflow();
 		else
 			clearoverflow();
-		if ((temp & 0x1f0) > 0x90) temp += 0x60; 
+		if ((temp & 0x1f0) > 0x90) temp += 0x60;
 		if ((temp & 0xff0) > 0xf0)
 			setcarry();
 		else
 			clearcarry();
 	} else {
-        temp = tempval + cpu.a + (cpu.cpustatus & FLAG_CARRY); 
-        SETFLAGS(temp & 0xff); 
-        if (!((cpu.a ^ tempval) & 0x80) && ((cpu.a ^ temp) & 0x80)) 
+        temp = tempval + cpu.a + (cpu.cpustatus & FLAG_CARRY);
+        SETFLAGS(temp & 0xff);
+        if (!((cpu.a ^ tempval) & 0x80) && ((cpu.a ^ temp) & 0x80))
             setoverflow();
-        else 
+        else
             clearoverflow();
-        if (temp > 0xff) 
-            setcarry(); 
-        else  
-            clearcarry();      		
-    }		
-	saveaccum(temp);	
+        if (temp > 0xff)
+            setcarry();
+        else
+            clearcarry();
+    }
+	saveaccum(temp);
 }
 
-INLINEOP void _sbc(unsigned data) {	
+INLINEOP void _sbc(unsigned data) {
 	unsigned tempval = data;
 	unsigned temp;
-	
+
 	temp = cpu.a - tempval - ((cpu.cpustatus & FLAG_CARRY) ^ FLAG_CARRY);
-	
+
     if (cpu.cpustatus & FLAG_DECIMAL) {
-		unsigned tempval2;  
+		unsigned tempval2;
 	  	tempval2 = (cpu.a & 0x0f) - (tempval & 0x0f) - ((cpu.cpustatus & FLAG_CARRY) ^ FLAG_CARRY);
 		if (tempval2 & 0x10)
-			tempval2 = ((tempval2 - 6) & 0xf) | ((cpu.a & 0xf0) - (tempval & 0xf0) - 0x10); 
-		else 
-			tempval2 = (tempval2 & 0xf) | ((cpu.a & 0xf0) - (tempval & 0xf0));    
+			tempval2 = ((tempval2 - 6) & 0xf) | ((cpu.a & 0xf0) - (tempval & 0xf0) - 0x10);
+		else
+			tempval2 = (tempval2 & 0xf) | ((cpu.a & 0xf0) - (tempval & 0xf0));
 		if (tempval2 & 0x100)
 			tempval2 -= 0x60;
 		if (temp < 0x100)
 			setcarry();
-		else 
+		else
 			clearcarry();
 		SETFLAGS(temp & 0xff);
 		if (((cpu.a ^ temp) & 0x80) && ((cpu.a ^ tempval) & 0x80))
@@ -336,24 +334,24 @@ INLINEOP void _sbc(unsigned data) {
 		saveaccum(tempval2);
 	} else {
 		SETFLAGS(temp & 0xff);
-        if (temp < 0x100)   		
+        if (temp < 0x100)
 			setcarry();
 		else
 			clearcarry();
 		if (((cpu.a ^ temp) & 0x80) && ((cpu.a ^ tempval) & 0x80))
 			 setoverflow();
 		else
-			clearoverflow(); 
+			clearoverflow();
 		saveaccum(temp);
-    }		
+    }
 
 }
 
-INLINEOP void adc() {	
+INLINEOP void adc() {
     unsigned data = getvalue();
 	_adc(data);
 }
-	
+
 INLINEOP void adcZP() {
 	unsigned data = getvalueZP();
 	_adc(data);
@@ -375,7 +373,8 @@ INLINEOP void op_andZP() {
 }
 
 INLINEOP void asl() {
-	uint32_t result = getvalue() << 1;
+	uint32_t result = getvalue();
+	result <<=1;
 	carrycalc(result);
 	zerocalc(result);
 	signcalc(result);
@@ -383,7 +382,8 @@ INLINEOP void asl() {
 }
 
 INLINEOP void aslZP() {
-	uint32_t result = getvalueZP() << 1;
+	uint32_t result = getvalueZP();
+	result <<=1;
 	carrycalc(result);
 	zerocalc(result);
 	signcalc(result);
@@ -428,26 +428,26 @@ INLINEOP void beq() {
 INLINEOP void op_bit() {
 	 unsigned value = getvalue();
 	 cpu.cpustatus = (cpu.cpustatus & ~(FLAG_SIGN|FLAG_OVERFLOW)) | (value & (FLAG_SIGN|FLAG_OVERFLOW));
-	 if (!(value & cpu.a)) 
+	 if (!(value & cpu.a))
 			setzero();
 		else
 			clearzero();
-/*	
+/*
 	uint32_t value = getvalue();
 	uint32_t result = (uint16_t)cpu.a & value;
 
 	zerocalc(result);
 	cpu.cpustatus = (cpu.cpustatus & 0x3F) | (uint8_t)(value & 0xC0);
-*/	
+*/
 }
 
 INLINEOP void op_bitZP() {
 	unsigned value = getvalueZP();
 	cpu.cpustatus = (cpu.cpustatus & ~(FLAG_SIGN|FLAG_OVERFLOW)) | (value & (FLAG_SIGN|FLAG_OVERFLOW));
-	if (!(value & cpu.a)) 
+	if (!(value & cpu.a))
 			setzero();
 		else
-			clearzero();	
+			clearzero();
 }
 
 INLINEOP void bmi() {
@@ -781,7 +781,7 @@ INLINEOP void pha() {
 }
 
 INLINEOP void php() {
-	push8(cpu.cpustatus | FLAG_BREAK);	
+	push8(cpu.cpustatus | FLAG_BREAK);
 }
 
 INLINEOP void pla() {
@@ -864,7 +864,7 @@ INLINEOP void rora() {
 
 
 INLINEOP void rti() {
-	cpu.cpustatus = pull8();			
+	cpu.cpustatus = pull8();
 	cpu.pc = pull16();
 }
 
@@ -922,12 +922,12 @@ INLINEOP void tay() {
 }
 
 INLINEOP void tsx() {
-	
+
 	cpu.x = cpu.sp;
 
 	zerocalc(cpu.x);
 	signcalc(cpu.x);
-	
+
 }
 
 INLINEOP void txa() {
@@ -992,15 +992,15 @@ INLINEOP void rra() {
 }
 
 INLINEOP void alr() { // (FB)
-	
+
 	uint32_t result = cpu.a & getvalue() ;
 
 	if (result & 1) setcarry();
 	else clearcarry();
-	
+
 	result = result / 2;
-	
-	clearsign();	
+
+	clearsign();
 	zerocalc(result);
 	saveaccum(result);
 }
@@ -1008,33 +1008,33 @@ INLINEOP void alr() { // (FB)
 INLINEOP void arr() { //This one took me hours.. finally taken from VICE (FB)
    uint32_t result;
    result = cpu.a & getvalue();
-   if (!(cpu.cpustatus & FLAG_DECIMAL)) { 		
-		result >>= 1;			    
-		result |= ((cpu.cpustatus & FLAG_CARRY) << 7);	   
+   if (!(cpu.cpustatus & FLAG_DECIMAL)) {
+		result >>= 1;
+		result |= ((cpu.cpustatus & FLAG_CARRY) << 7);
 		signcalc(result);
 		zerocalc(result);
 		if (result & 0x40) setcarry(); else clearcarry();
-		if ((result & 0x40) ^ ((result & 0x20)<<1)) setoverflow(); else clearoverflow();		
+		if ((result & 0x40) ^ ((result & 0x20)<<1)) setoverflow(); else clearoverflow();
 		saveaccum(result);
    } else {
-		uint32_t t2 = result;		
+		uint32_t t2 = result;
 		t2 >>= 1;
-		t2 |= ((cpu.cpustatus & FLAG_CARRY) << 7);	   
+		t2 |= ((cpu.cpustatus & FLAG_CARRY) << 7);
 		if (cpu.cpustatus & FLAG_CARRY) setsign(); else clearsign();
 		zerocalc(t2);
 		if ((t2 ^ result) & 0x40) setoverflow(); else clearoverflow();
-	    if (((result & 0xf) + (result & 0x1)) > 0x5) {               
-                t2 = (t2 & 0xf0) | ((t2 + 0x6) & 0xf);     
-        }                                                       
-        if (((result & 0xf0) + (result & 0x10)) > 0x50) {             
-                t2 = (t2 & 0x0f) | ((t2 + 0x60) & 0xf0);   
-                setcarry();                       
-        } else {                                                
+	    if (((result & 0xf) + (result & 0x1)) > 0x5) {
+                t2 = (t2 & 0xf0) | ((t2 + 0x6) & 0xf);
+        }
+        if (((result & 0xf0) + (result & 0x10)) > 0x50) {
+                t2 = (t2 & 0x0f) | ((t2 + 0x60) & 0xf0);
+                setcarry();
+        } else {
                 clearcarry();
-        }  
+        }
 	   saveaccum(t2);
    }
-	
+
 }
 
 INLINEOP void xaa() { // AKA ANE
@@ -1047,20 +1047,20 @@ INLINEOP void xaa() { // AKA ANE
 
 INLINEOP void lxa() {
 	const uint32_t val = 0xee;
-	uint32_t result = (cpu.a | val) & getvalue();	
+	uint32_t result = (cpu.a | val) & getvalue();
 	signcalc(result);
 	zerocalc(result);
 	cpu.x = result;
-	saveaccum(result);		
+	saveaccum(result);
 }
 
 INLINEOP void axs() { //aka SBX
     uint32_t result = getvalue();
     result = (cpu.a & cpu.x) - result;
 	cpu.x = result;
-	if (result < 0x100) setcarry(); else clearcarry();	
+	if (result < 0x100) setcarry(); else clearcarry();
 	zerocalc(cpu.x);
-	signcalc(cpu.x);	
+	signcalc(cpu.x);
 }
 
 INLINEOP void ahx() { //todo (is unstable)
@@ -1072,7 +1072,7 @@ INLINEOP void anc() {
 	signcalc(result)
     zerocalc(result);
 	if (cpu.cpustatus & FLAG_SIGN) setcarry(); else clearcarry();
-    saveaccum(result);	
+    saveaccum(result);
 }
 
 INLINEOP void las() {
@@ -1221,7 +1221,7 @@ OPCODE void op0x17(void) { //undocumented
 	cpu.ticks = 6;
 	//zpy(); bug
 	zpx();
-	slo();	
+	slo();
 }
 
 OPCODE void op0x18(void) {
@@ -1242,7 +1242,6 @@ OPCODE void op0x1A(void) { //nop
 
 OPCODE void op0x1B(void) { //undocumented
 	cpu.ticks = 7;
-	dummyread;  
 	absy();
 	slo();
 }
@@ -1260,7 +1259,6 @@ OPCODE void op0x1D(void) {
 
 OPCODE void op0x1E(void) {
 	cpu.ticks = 7;
-	dummyread;
 	absx();
 	asl();
 }
@@ -1268,7 +1266,6 @@ OPCODE void op0x1E(void) {
 
 OPCODE void op0x1F(void) { //undocumented
 	cpu.ticks = 7;
-	dummyread;  
 	absx();
 	slo();
 }
@@ -1422,7 +1419,6 @@ OPCODE void op0x3A(void) { //nop
 
 OPCODE void op0x3B(void) { //undocumented
 	cpu.ticks = 7;
-	dummyread;  
 	absy();
 	rla();
 }
@@ -1440,14 +1436,12 @@ OPCODE void op0x3D(void) {
 
 OPCODE void op0x3E(void) {
 	cpu.ticks = 7;
-	dummyread;  
 	absx();
 	rol();
 }
 
 OPCODE void op0x3F(void) { //undocumented
 	cpu.ticks = 7;
-	dummyread;  
 	absx();
 	rla();
 }
@@ -1601,7 +1595,6 @@ OPCODE void op0x5A(void) { //nop
 
 OPCODE void op0x5B(void) { //undocumented
 	cpu.ticks = 7;
-	dummyread;  
 	absy();
 	sre();
 }
@@ -1619,14 +1612,12 @@ OPCODE void op0x5D(void) {
 
 OPCODE void op0x5E(void) {
 	cpu.ticks = 7;
-	dummyread;  
 	absx();
 	lsr();
 }
 
 OPCODE void op0x5F(void) { //undocumented
 	cpu.ticks = 7;
-	dummyread;  
 	absx();
 	sre();
 }
@@ -1779,7 +1770,6 @@ OPCODE void op0x7A(void) { //nop
 
 OPCODE void op0x7B(void) { //undocumented
 	cpu.ticks = 7;
-	dummyread;  
 	absy();
 	rra();
 }
@@ -1797,14 +1787,12 @@ OPCODE void op0x7D(void) {
 
 OPCODE void op0x7E(void) {
 	cpu.ticks = 7;
-	dummyread;  
 	absx();
 	ror();
 }
 
 OPCODE void op0x7F(void) { //undocumented
 	cpu.ticks = 7;
-	dummyread;  
 	absx();
 	rra();
 }
@@ -1952,7 +1940,6 @@ OPCODE void op0x98(void) {
 
 OPCODE void op0x99(void) {
 	cpu.ticks = 5;
-	dummyread;  
 	absy();
 	sta();
 }
@@ -1965,7 +1952,6 @@ OPCODE void op0x9A(void) {
 
 OPCODE void op0x9B(void) { //undocumented
 	cpu.ticks = 5;
-	dummyread;  
 	absy();
 	//tas();
 	UNSUPPORTED;
@@ -1973,7 +1959,6 @@ OPCODE void op0x9B(void) { //undocumented
 
 OPCODE void op0x9C(void) { //undocumented
 	cpu.ticks = 5;
-	dummyread;  
 	absy();
 	//shy();
 	UNSUPPORTED;
@@ -1981,21 +1966,18 @@ OPCODE void op0x9C(void) { //undocumented
 
 OPCODE void op0x9D(void) {
 	cpu.ticks = 5;
-	dummyread;  
 	absx();
 	sta();
 }
 
 OPCODE void op0x9E(void) { //undocumented
 	cpu.ticks = 5;
-	dummyread;  
 	absx();
 	//shx();
 }
 
 OPCODE void op0x9F(void) { //undocumented
 	cpu.ticks = 5;
-	dummyread;  
 	absx();
 	ahx();
 }
@@ -2340,7 +2322,6 @@ OPCODE void op0xDA(void) { //nop
 
 OPCODE void op0xDB(void) { //undocumented
 	cpu.ticks = 7;
-	dummyread;  
 	absy();
 	dcp();
 }
@@ -2358,14 +2339,12 @@ OPCODE void op0xDD(void) {
 
 OPCODE void op0xDE(void) {
 	cpu.ticks = 7;
-	dummyread;  
 	absx();
 	dec();
 }
 
 OPCODE void op0xDF(void) { //undocumented
 	cpu.ticks = 7;
-	dummyread;  
 	absx();
 	dcp();
 }
@@ -2430,7 +2409,7 @@ OPCODE void op0xE9(void) {
 }
 
 OPCODE void op0xEA(void) {
-	cpu.ticks = 2; 
+	cpu.ticks = 2;
 }
 
 OPCODE void op0xEB(void) {
@@ -2522,7 +2501,6 @@ OPCODE void op0xFA(void) { //nop
 
 OPCODE void op0xFB(void) { //undocumented
 	cpu.ticks = 7;
-	dummyread;  
 	absy();
 	isb();
 }
@@ -2540,37 +2518,35 @@ OPCODE void op0xFD(void) {
 
 OPCODE void op0xFE(void) {
 	cpu.ticks = 7;
-	dummyread;  
 	absx();
 	inc();
 }
 
 OPCODE void op0xFF(void) { //undocumented
 	cpu.ticks = 7;
-	dummyread;  
 	absx();
 	isb();
 }
 
 OPCODE void opPATCHD2(void) {
-#if APPLY_PATCHES	
+#if APPLY_PATCHES
 	patchLOAD();
-#else 
+#else
 	opKIL();
 #endif
 }
 
 OPCODE void opPATCHF2(void) {
-#if APPLY_PATCHES	
+#if APPLY_PATCHES
 	patchSAVE();
-#else 	
+#else
 	opKIL();
 #endif
 }
 
 typedef void (*op_ptr_t)( void );
 
- const op_ptr_t opcodetable[256] = {
+static const op_ptr_t opcodetable[256] = {
   /*        	0   	1   	2   	3   	4   	5   	6   	7   	8	   9   		A   	B   	C   	D   	E   	F */
   /* 0  */    op0x0 , op0x1,  opKIL , op0x3,  op0x4 , op0x5,  op0x6,  op0x7,  op0x8,  op0x9,  op0xA,  op0xB , op0xC , op0xD , op0xE , op0xF,
   /* 1  */    op0x10, op0x11, opKIL , op0x13, op0x14, op0x15, op0x16, op0x17, op0x18, op0x19, op0x1A, op0x1B, op0x1C, op0x1D, op0x1E, op0x1F,
@@ -2589,30 +2565,50 @@ typedef void (*op_ptr_t)( void );
   /* E  */    op0xE0, op0xE1, op0xE2, op0xE3, op0xE4, op0xE5, op0xE6, op0xE7, op0xE8, op0xE9, op0xEA, op0xEB, op0xEC, op0xED, op0xEE, op0xEF,
   /* F  */    op0xF0, op0xF1, opPATCHF2 , op0xF3, op0xF4, op0xF5, op0xF6, op0xF7, op0xF8, op0xF9, op0xFA, op0xFB, op0xFC, op0xFD, op0xFE, op0xFF
 };
-/*
-static const byte Cycles[256] =
+
+static const uint8_t cyclesTable[256] =
 {
-  7,6,2,8,3,3,5,5,3,2,2,2,4,4,6,6,
-  2,5,2,8,4,4,6,6,2,4,2,7,5,5,7,7,
-  6,6,2,8,3,3,5,5,4,2,2,2,4,4,6,6,
-  2,5,2,8,4,4,6,6,2,4,2,7,5,5,7,7,
-  6,6,2,8,3,3,5,5,3,2,2,2,3,4,6,6,
-  2,5,2,8,4,4,6,6,2,4,2,7,5,5,7,7,
-  6,6,2,8,3,3,5,5,4,2,2,2,5,4,6,6,
-  2,5,2,8,4,4,6,6,2,4,2,7,5,5,7,7,
-  2,6,2,6,3,3,3,3,2,2,2,2,4,4,4,4,
-  2,6,2,6,4,4,4,4,2,5,2,5,5,5,5,5,
-  2,6,2,6,3,3,3,3,2,2,2,2,4,4,4,4,
-  2,5,2,5,4,4,4,4,2,4,2,5,4,4,4,4,
-  2,6,2,8,3,3,5,5,2,2,2,2,4,4,6,6,
-  2,5,2,8,4,4,6,6,2,4,2,7,5,5,7,7,
-  2,6,2,8,3,3,5,5,2,2,2,2,4,4,6,6,
-  2,5,2,8,4,4,6,6,2,4,2,7,5,5,7,7
+	7, 6, 2, 8, 3, 3, 5, 5, 3, 2, 2, 2, 4, 4, 6, 6,  // $00
+	2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 5, 5, 7, 7,  // $10
+	6, 6, 2, 8, 3, 3, 5, 5, 4, 2, 2, 2, 4, 4, 6, 6,  // $20
+	2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 5, 5, 7, 7,  // $30
+	6, 6, 2, 8, 3, 3, 5, 5, 3, 2, 2, 2, 3, 4, 6, 6,  // $40
+	2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 5, 5, 7, 7,  // $50
+	6, 6, 2, 8, 3, 3, 5, 5, 4, 2, 2, 2, 5, 4, 6, 6,  // $60
+	2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 5, 5, 7, 7,  // $70
+	2, 6, 2, 6, 3, 3, 3, 3, 2, 2, 2, 2, 4, 4, 4, 4,  // $80
+	2, 6, 2, 6, 4, 4, 4, 4, 2, 5, 2, 5, 5, 5, 5, 5,  // $90
+	2, 6, 2, 6, 3, 3, 3, 3, 2, 2, 2, 2, 4, 4, 4, 4,  // $A0
+	2, 5, 2, 5, 4, 4, 4, 4, 2, 4, 2, 5, 4, 4, 4, 4,  // $B0
+	2, 6, 2, 8, 3, 3, 5, 5, 2, 2, 2, 2, 4, 4, 6, 6,  // $C0
+	2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 5, 5, 7, 7,  // $D0
+	2, 6, 2, 8, 3, 3, 5, 5, 2, 2, 2, 2, 4, 4, 6, 6,  // $E0
+	2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 5, 5, 7, 7   // $F0
 };
-*/
+
+static const uint8_t writeCycleTable[256] = 
+{
+    3, 0, 0, 2, 0, 0, 2, 2, 1, 0, 0, 0, 0, 0, 2, 2, // $00
+    0, 0, 0, 2, 0, 0, 2, 2, 0, 0, 0, 2, 0, 0, 2, 2, // $10
+    2, 0, 0, 2, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 2, 2, // $20
+    0, 0, 0, 2, 0, 0, 2, 2, 0, 0, 0, 2, 0, 0, 2, 2, // $30
+    0, 0, 0, 2, 0, 0, 2, 2, 1, 0, 0, 0, 0, 0, 2, 2, // $40
+    0, 0, 0, 2, 0, 0, 2, 2, 0, 0, 0, 2, 0, 0, 2, 2, // $50
+    0, 0, 0, 2, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 2, 2, // $60
+    0, 0, 0, 2, 0, 0, 2, 2, 0, 0, 0, 2, 0, 0, 2, 2, // $70
+    0, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, // $80
+    0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, // $90
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // $A0
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // $B0
+    0, 0, 0, 2, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 2, 2, // $C0
+    0, 0, 0, 2, 0, 0, 2, 2, 0, 0, 0, 2, 0, 0, 2, 2, // $D0
+    0, 0, 0, 2, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 2, 2, // $E0
+    0, 0, 0, 2, 0, 0, 2, 2, 0, 0, 0, 2, 0, 0, 2, 2  // $F0
+};
+
 
 void cpu_nmi() {
- 
+
 }
 void cpu_clearNmi() {
 	cpu.nmi = 0;
@@ -2625,64 +2621,67 @@ void cpu_nmi_do() {
 	push8(cpu.cpustatus & ~FLAG_BREAK);
 	cpu.cpustatus |= FLAG_INTERRUPT;
 	cpu.pc = read6502(0xFFFA) | (read6502(0xFFFB) << 8);
-	cpu.ticks = 7;		
+	cpu.ticks = 7;
 }
-	
+
 static inline void cpu_irq() {
   push16(cpu.pc);
   push8(cpu.cpustatus & ~FLAG_BREAK);
   cpu.cpustatus |= FLAG_INTERRUPT;
   cpu.pc = read6502(0xFFFE) | (read6502(0xFFFF) << 8);
-  cpu.ticks = 7; 
+  cpu.ticks = 7;
 }
 
 inline void cia_clock(void)  __attribute__((always_inline));
 
 void cia_clock(void) {
 	cia1_clock(1);
-	cia2_clock(1);	
+	cia2_clock(1);
 }
 
 void cia_clockt(int ticks) {
 	cia1_clock(ticks);
-	cia2_clock(ticks);	
+	cia2_clock(ticks);
 }
 
 void cpu_clock(int cycles) {
 static int c = 0;
+static int writeCycles = 0;
+
     c+=cycles;
-	while (c > 0) {		
-	
+	while (c > 0) {
+
 			uint8_t opcode ;
 			cpu.ticks = 0;
-			
+
 			//NMI
-			
+
 			if (!cpu.nmi && (cpu.cia2.R[0x0D] & 0x80)) {
 				cpu_nmi_do();
 				goto noOpcode;
 			}
-				
-		    if (!(cpu.cpustatus & FLAG_INTERRUPT)) {				
+
+		    if (!(cpu.cpustatus & FLAG_INTERRUPT)) {
 				if (((cpu.vic.R[0x19] | cpu.cia1.R[0x0D]) & 0x80)) {
-					cpu_irq(); 
+					cpu_irq();
 					goto noOpcode;
-				}				
-			} 
-						
+				}
+			}
+
 			cpu.cpustatus |= FLAG_CONSTANT;
 			opcode = read6502(cpu.pc++);
-			opcodetable[opcode]();	
-noOpcode:	
-	
-			cia_clockt(cpu.ticks);	
+			opcodetable[opcode]();
+			writeCycles = writeCycleTable[opcode];
+noOpcode:
+
+			cia_clockt(cpu.ticks);
 			c-= cpu.ticks;
 			cpu.lineCycles += cpu.ticks;
 
 			if (cpu.exactTiming) {
 				uint32_t t = cpu.lineCycles * MCU_C64_RATIO;
-				while (ARM_DWT_CYCCNT - cpu.lineStartTime < t){;}				
-			} 
+				while (ARM_DWT_CYCCNT - cpu.lineStartTime < t){;}
+			}
 
 	};
 
@@ -2690,9 +2689,9 @@ noOpcode:
 }
 
 //Enable "ExactTiming" Mode
-void cpu_setExactTiming() {	
+void cpu_setExactTiming() {
 	if (!cpu.exactTiming) {
-		LED_ON;	
+		LED_ON;
 		setAudioOff();
 	}
 	cpu.exactTiming = ARM_DWT_CYCCNT;

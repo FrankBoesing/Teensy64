@@ -76,7 +76,7 @@ struct tcpu {
   uint16_t reladdr;  
   uint16_t ea;
 
-  unsigned ticks,cycles;
+  unsigned ticks;
   unsigned lineCycles;
   unsigned long lineStartTime;
 
