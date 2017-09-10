@@ -70,8 +70,8 @@ Board
 
 Building - see [forum for more](https://forum.pjrc.com/threads/46168-Commodore-C64-Emulation-on-a-Teensy-3-6-Microcontroller?p=152499&viewfull=1#post152499)
 ----------
-Install Arduino IDE - last tested with 1.8.4 and TeensyDuino - last tested with 1.39
-External libraries required to be in sketchbook/libraries:
+Install Arduino IDE - last tested with 1.8.4 and TeensyDuino - last tested with 1.39.
 
+External libraries required to be in sketchbook/libraries:
 - [Teensy-reSid](https://github.com/FrankBoesing/Teensy-reSID)
 - [SdFat](https://github.com/greiman/SdFat)
