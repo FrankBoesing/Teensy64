@@ -1,0 +1,99 @@
+PinMap Collection : #define association and usage in Teensy64
+
+GitHub\Teensy64\Teensy64\settings.h
+==============================================
+//Teensy Pins
+
+#define SCK       14
+#define MISO      39
+#define MOSI      28
+#define TFT_TOUCH_CS    38
+#define TFT_TOUCH_INT   37
+#define TFT_DC          20
+#define TFT_CS          21
+#define TFT_RST         255  // 255 = unused, connected to 3.3V
+#define TFT_SCLK        SCK
+#define TFT_MOSI        MOSI
+#define TFT_MISO        MISO
+
+#define LED_INIT  {pinMode(13,OUTPUT);}
+#define LED_ON    {digitalWriteFast(13,1);}
+#define LED_OFF   {digitalWriteFast(13,0);}
+#define LED_TOGGLE  {GPIOC_PTOR=32;} // This toggles the Teensy Builtin LED pin 13
+
+#define PIN_RESET       25 //PTA5
+#define PIN_SERIAL_ATN   4 //PTA13
+#define PIN_SERIAL_CLK  26 //PTA14
+#define PIN_SERIAL_DATA 27 //PTA15
+
+#define PIN_JOY1_BTN     5 //PTD7
+#define PIN_JOY1_1       2 //PTD0 up
+#define PIN_JOY1_2       7 //PTD2 down
+#define PIN_JOY1_3       8 //PTD3 left 
+#define PIN_JOY1_4       6 //PTD4 right
+#define PIN_JOY1_A1     A12
+#define PIN_JOY1_A2     A13
+
+#define PIN_JOY2_BTN    24 //PTE26
+#define PIN_JOY2_1       0 //PTB16 up
+#define PIN_JOY2_2       1 //PTB17 down
+#define PIN_JOY2_3      29 //PTB18 left
+#define PIN_JOY2_4      30 //PTB19 right
+#define PIN_JOY2_A1     A14
+#define PIN_JOY2_A2     A15
+
+#define JOYSTICK1() ({uint32_t v = GPIOD_PDIR;v =( (~v & 0x01) | ((~v & 0x1c) >> 1) | ((~v & 0x80) >> 3) ) & 0x1f;})  // PTD0, PTD2, PTD3, PTD4, PTD7
+#define JOYSTICK2   (((~GPIOB_PDIR >> 16) & 0x0f) | (((~GPIOE_PDIR >> 26) & 0x01) << 4))
+
+
+
+GitHub\Teensy64\Teensy64\cia2.cpp
+==============================================
+  pinMode(PIN_SERIAL_ATN, OUTPUT_OPENDRAIN);  //ATN OUT (CIA2 PA3 OUT)
+  pinMode(PIN_SERIAL_CLK, OUTPUT_OPENDRAIN);  //CLK   (CIA2 PA6:IN PA4: OUT)
+  pinMode(PIN_SERIAL_DATA, OUTPUT_OPENDRAIN); //DATA  (CIA2 PA7:IN PA5: OUT)
+  
+
+GitHub\Teensy64\Teensy64\keyboard.cpp
+==============================================
+void initJoysticks() {
+  pinMode(PIN_JOY1_1, INPUT_PULLUP);
+  pinMode(PIN_JOY1_2, INPUT_PULLUP);
+  pinMode(PIN_JOY1_3, INPUT_PULLUP);
+  pinMode(PIN_JOY1_4, INPUT_PULLUP);
+  pinMode(PIN_JOY1_BTN, INPUT_PULLUP);
+
+  pinMode(PIN_JOY2_1, INPUT_PULLUP);
+  pinMode(PIN_JOY2_2, INPUT_PULLUP);
+  pinMode(PIN_JOY2_3, INPUT_PULLUP);
+  pinMode(PIN_JOY2_4, INPUT_PULLUP);
+  pinMode(PIN_JOY2_BTN, INPUT_PULLUP);
+}
+
+void initKeyboard() {
+	keyboard.attachC64(keyboardmatrix);
+}
+
+
+GitHub\Teensy64\Teensy64\Teensy64.cpp
+==============================================
+#if 1
+  //enable sd-card pullups early
+  PORTE_PCR0 = PORT_PCR_MUX(1) | PORT_PCR_PE | PORT_PCR_PS;   /* PULLUP SDHC.D1  */
+  PORTE_PCR1 = PORT_PCR_MUX(1) | PORT_PCR_PE | PORT_PCR_PS;   /* PULLUP SDHC.D0  */
+  PORTE_PCR3 = PORT_PCR_MUX(1) | PORT_PCR_PE | PORT_PCR_PS;   /* PULLUP SDHC.CMD */
+  PORTE_PCR4 = PORT_PCR_MUX(1) | PORT_PCR_PE | PORT_PCR_PS;   /* PULLUP SDHC.D3  */
+  PORTE_PCR5 = PORT_PCR_MUX(1) | PORT_PCR_PE | PORT_PCR_PS;   /* PULLUP SDHC.D2  */
+#endif
+
+  pinMode(PIN_RESET, OUTPUT_OPENDRAIN);
+  digitalWriteFast(PIN_RESET, 1);
+
+  pinMode(TFT_TOUCH_CS, OUTPUT);
+  digitalWriteFast(TFT_TOUCH_CS, 1);
+
+
+
+==============================================
+
+==============================================
