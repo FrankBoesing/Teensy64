@@ -107,6 +107,7 @@
 #define PIN_SERIAL_ATN   4 //PTA13
 #define PIN_SERIAL_CLK  26 //PTA14
 #define PIN_SERIAL_DATA 27 //PTA15
+#define PIN_SERIAL_SRQ  36 //PTC9
 
 #if 0
 #define WRITE_ATN_CLK_DATA(value) { \
