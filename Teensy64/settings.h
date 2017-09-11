@@ -144,10 +144,5 @@ digitalWriteFast(PIN_SERIAL_DATA, (~value & 0x20)); \ //PTA15 IEC DATA 5
 #define PIN_JOY2_A1     A14
 #define PIN_JOY2_A2     A15
 
-#define JOYSTICK1() ({uint32_t v = GPIOD_PDIR;v =( (~v & 0x01) | ((~v & 0x1c) >> 1) | ((~v & 0x80) >> 3) ) & 0x1f;})  // PTD0, PTD2, PTD3, PTD4, PTD7
-#define JOYSTICK2   (((~GPIOB_PDIR >> 16) & 0x0f) | (((~GPIOE_PDIR >> 26) & 0x01) << 4))
-
-
-
 #endif
  

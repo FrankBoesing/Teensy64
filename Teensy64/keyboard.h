@@ -1,5 +1,5 @@
 /*
-	Copyright Frank Bösing, 2017	
+	Copyright Frank Bösing, 2017
 
 	This file is part of Teensy64.
 
@@ -30,7 +30,7 @@
 
     Sie sollten eine Kopie der GNU General Public License zusammen mit diesem
     Programm erhalten haben. Wenn nicht, siehe <http://www.gnu.org/licenses/>.
-		
+
 */
 
 #ifndef Teensy64_keyboard_h_
@@ -43,9 +43,9 @@ void initJoysticks();
 
 void sendKey(char key);
 void sendString(const char * p);
-
-uint8_t keypress();
-uint8_t joystick2();
 void do_sendString();//call in yield()
+
+uint8_t cia1PORTA(void);
+uint8_t cia1PORTB(void);
 
 #endif
