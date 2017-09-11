@@ -25,6 +25,7 @@ GitHub\Teensy64\Teensy64\settings.h
 #define PIN_SERIAL_ATN   4 //PTA13
 #define PIN_SERIAL_CLK  26 //PTA14
 #define PIN_SERIAL_DATA 27 //PTA15
+// not used _ #define PIN_SERIAL_SRQ Frank_?? //PT_??_??
 
 #define PIN_JOY1_BTN     5 //PTD7
 #define PIN_JOY1_1       2 //PTD0 up
@@ -52,7 +53,8 @@ GitHub\Teensy64\Teensy64\cia2.cpp
   pinMode(PIN_SERIAL_ATN, OUTPUT_OPENDRAIN);  //ATN OUT (CIA2 PA3 OUT)
   pinMode(PIN_SERIAL_CLK, OUTPUT_OPENDRAIN);  //CLK   (CIA2 PA6:IN PA4: OUT)
   pinMode(PIN_SERIAL_DATA, OUTPUT_OPENDRAIN); //DATA  (CIA2 PA7:IN PA5: OUT)
-  
+// not used _   pinMode(PIN_SERIAL_SRQ, OUTPUT_OPENDRAIN); //SRQ  (CIA1 PA_??:IN PA_??: OUT)   
+// The 5th transistor is for "IEC SRQ" - the C64 does not use it (C128 does), there may be some fastloaders that use it. It connects to a pin on CIA1 
 
 GitHub\Teensy64\Teensy64\keyboard.cpp
 ==============================================
@@ -92,8 +94,3 @@ GitHub\Teensy64\Teensy64\Teensy64.cpp
   pinMode(TFT_TOUCH_CS, OUTPUT);
   digitalWriteFast(TFT_TOUCH_CS, 1);
 
-
-
-==============================================
-
-==============================================
