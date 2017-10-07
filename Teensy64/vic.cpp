@@ -1672,35 +1672,23 @@ noDisplayIncRC:
 /*****************************************************************************************************/
 /*****************************************************************************************************/
 void fastFillLineNoSprites(tpixel * p, const tpixel * pe, const uint16_t col) {
-/*
-  // 16Bit align to 32Bit
-  while ( ( (uintptr_t)p & 0x03) != 0 && p < pe) {
-    *p++ = col;
+  int i = 0;  
+  while (p < pe) {
+		*p++ = col;  
+		i = (i + 1) & 0x07;
+		if (!i) CYCLES(1);
   }
-  // Fast 32BIT aligned fill
-  while ( p <= pe - 2 )  {
-    *(uint32_t *)p = col << 16 | col;
-    p += 2;
-  }
-  // Fill remaining
-  while ( p < pe ) {
-    *p++ = col;
-  }
-*/
-  memset(p, col, (pe-p)*sizeof(tpixel));
-//  memset(cpu.vic.spriteLine, 0, sizeof(cpu.vic.spriteLine) );
-  CYCLES(40);
 }
 
 void fastFillLine(tpixel * p, const tpixel * pe, const uint16_t col, uint16_t *  spl) {
-  uint16_t sprite;
-
   if (spl != NULL && cpu.vic.lineHasSprites) {
-
+	int i = 0;
+	uint16_t sprite;
     while ( p < pe ) {
-      SPRITEORFIXEDCOLOR();
+		SPRITEORFIXEDCOLOR();
+		i = (i + 1) & 0x07;
+		if (!i) CYCLES(1);	  
     };
-    CYCLES(40);
 
   } else {
 
