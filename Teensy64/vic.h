@@ -38,15 +38,43 @@
 
 #include <Arduino.h>
 #include "settings.h"
+#include "Teensy64.h"
 #include "IntervalTimer.h"
-#include "ili9341_t64.h"
 
+#if VGA
+
+#define BORDER         36 // Top/Bottom Screen border
+#define BORDER_LEFT	   17*8
+#define BORDER_RIGHT   6*8
+#define SCREEN_WIDTH   320
+#define LINE_MEM_WIDTH 464
+#define FIRSTDISPLAYLINE ( 51 - BORDER ) - 1
+#define LASTDISPLAYLINE  ( 284 )
+#define BORDER_LEFT
+
+#define XOFFSET		    48
+#define YOFFSET		    16
+typedef uint8_t tpixel ;
+#define SCREENMEM VGA_frame_buffer + LINE_MEM_WIDTH * YOFFSET + XOFFSET
+
+#else
+
+#include "ili9341_t64.h"
 #define TFT_HEIGHT  ILI9341_TFTHEIGHT
 #define TFT_WIDTH   ILI9341_TFTWIDTH
-
 #define BORDER      20
 #define SCREEN_HEIGHT (200+2*BORDER)
-#define SCREEN_WIDTH  TFT_WIDTH
+#define SCREEN_WIDTH   TFT_WIDTH
+#define LINE_MEM_WIDTH TFT_WIDTH
+#define FIRSTDISPLAYLINE (  51 - BORDER )
+#define LASTDISPLAYLINE  ( 250 + BORDER )
+typedef uint16_t tpixel;
+extern uint16_t screen[TFT_HEIGHT][TFT_WIDTH];
+#define SCREENMEM (uint16_t*)&screen
+
+#endif
+
+
 
 /* for later use
 struct tsprite {
@@ -64,7 +92,8 @@ struct tvic {
   uint16_t vcbase;
   uint8_t rc;
 
-  uint8_t borderFlag;
+  uint8_t borderFlag;  //Top-Bottom border flag
+  uint8_t borderFlagH; //Left-Right border flag
   uint8_t idle;
   uint8_t denLatch;
   uint8_t badline;
@@ -73,17 +102,17 @@ struct tvic {
   int8_t spriteCycles0_2;
   int8_t spriteCycles3_7;
   int fgcollision;
-  
+
   uint8_t * charsetPtrBase;
   uint8_t * charsetPtr;
   uint8_t * bitmapPtr;
   uint16_t videomatrix;
 
   uint16_t colors[15]; // translated ([palette]) colors
-  uint16_t palette[16];  
-  
+  uint16_t palette[16];
+
   MyIntervalTimer lineClock;
-  
+
   union {
     uint8_t R[0x40];
     struct {
@@ -121,17 +150,15 @@ struct tvic {
       uint8_t M7C: 4, : 4; // Spritecolor 7 $D02E
     };
   };
-  
+
   //tsprite spriteInfo[8];//todo
   uint16_t spriteLine[SCREEN_WIDTH + 24 * 2];
-  
+
   uint8_t lineMemChr[40];
   uint8_t lineMemCol[40];
   uint8_t COLORRAM[1024];
 
 };
-
-extern uint16_t screen[TFT_HEIGHT][TFT_WIDTH];
 
 void vic_do(void);
 

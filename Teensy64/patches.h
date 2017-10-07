@@ -1,5 +1,5 @@
 /*
-	Copyright Frank Bösing, 2017	
+	Copyright Frank Bösing, 2017
 
 	This file is part of Teensy64.
 
@@ -30,14 +30,16 @@
 
     Sie sollten eine Kopie der GNU General Public License zusammen mit diesem
     Programm erhalten haben. Wenn nicht, siehe <http://www.gnu.org/licenses/>.
-		
+
 */
 #ifndef Teensy64_patches_h_
 #define Teensy64_patches_h_
 
-#include <SD.h>
+#include <SdFat.h>
 #include "cpu.h"
 #include "roms.h"
+
+extern SdFatSdio SD;
 
 void patchLOAD(void);
 void patchSAVE(void);

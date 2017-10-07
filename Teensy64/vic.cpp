@@ -43,9 +43,9 @@
   - ...
   - DMA Delay (?) - needs partial rewrite (idle - > badline in middle of line. Is the 3.6 fast enough??)
   - optimize more
-*/  
+*/
 
-#include <DMAChannel.h>
+
 #include "cpu.h"
 #include "settings.h"
 
@@ -53,9 +53,6 @@
 #include "roms.h"
 #include "vic.h"
 #include "vic_palette.h"
-
-#define FIRSTDISPLAYLINE (  51 - BORDER )
-#define LASTDISPLAYLINE  ( 250 + BORDER )
 
 #define MAXCYCLESSPRITES0_2       7
 #define MAXCYCLESSPRITES3_7        10
@@ -67,9 +64,9 @@
 /*****************************************************************************************************/
 
 inline __attribute__((always_inline))
-void fastFillLine(uint16_t * p, const uint16_t * pe, const uint16_t col, uint16_t * spl);
+void fastFillLine(tpixel * p, const tpixel * pe, const uint16_t col, uint16_t * spl);
 inline __attribute__((always_inline))
-void fastFillLineNoSprites(uint16_t * p, const uint16_t * pe, const uint16_t col);
+void fastFillLineNoSprites(tpixel * p, const tpixel * pe, const uint16_t col);
 
 
 /*****************************************************************************************************/
@@ -117,7 +114,7 @@ void fastFillLineNoSprites(uint16_t * p, const uint16_t * pe, const uint16_t col
 #endif
 
 /*****************************************************************************************************/
-void mode0 (uint16_t *p, const uint16_t *pe, uint16_t *spl, const uint16_t vc) {
+void mode0 (tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
   // Standard-Textmodus(ECM/BMM/MCM=0/0/0)
   /*
     Standard-Textmodus (ECM / BMM / MCM = 0/0/0)
@@ -160,7 +157,7 @@ void mode0 (uint16_t *p, const uint16_t *pe, uint16_t *spl, const uint16_t vc) {
       for (unsigned i = 0; i < m; i++) {
         int sprite = *spl;
 		*spl++ = 0;
-		
+
         if (sprite) {     // Sprite: Ja
 		  int spritenum = SPRITENUM(sprite);
           int spritepixel = sprite & 0x0f;
@@ -180,7 +177,7 @@ void mode0 (uint16_t *p, const uint16_t *pe, uint16_t *spl, const uint16_t vc) {
           pixel = (chr & 0x80) ? fgcol : cpu.vic.B0C;
         }
 
-        *p++ = cpu.vic.palette[pixel];        
+        *p++ = cpu.vic.palette[pixel];
         chr = chr << 1;
 
       }
@@ -194,7 +191,7 @@ void mode0 (uint16_t *p, const uint16_t *pe, uint16_t *spl, const uint16_t vc) {
 
       chr = cpu.vic.charsetPtr[cpu.vic.lineMemChr[x] * 8];
       fgcol = cpu.vic.palette[cpu.vic.lineMemCol[x]];
-	  bgcol = cpu.vic.colors[1];	  
+	  bgcol = cpu.vic.colors[1];
       x++;
 
       *p++ = (chr & 0x80) ? fgcol : bgcol;
@@ -232,7 +229,7 @@ void mode0 (uint16_t *p, const uint16_t *pe, uint16_t *spl, const uint16_t vc) {
 };
 
 /*****************************************************************************************************/
-void mode1 (uint16_t *p, const uint16_t *pe, uint16_t *spl, const uint16_t vc) {
+void mode1 (tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
   /*
     Multicolor-Textmodus (ECM/BMM/MCM=0/0/1)
     Dieser Modus ermöglicht es, auf Kosten der horizontalen Auflösung vierfarbige Zeichen darzustellen.
@@ -386,7 +383,7 @@ void mode1 (uint16_t *p, const uint16_t *pe, uint16_t *spl, const uint16_t vc) {
     while (p < pe - 8) {
 
       BADLINE(x);
-	  
+
       bgcol = cpu.vic.colors[1];
       colors[0] = bgcol;
 	  colors[1] = cpu.vic.colors[2];
@@ -456,7 +453,7 @@ void mode1 (uint16_t *p, const uint16_t *pe, uint16_t *spl, const uint16_t vc) {
 }
 
 /*****************************************************************************************************/
-void mode2 (uint16_t *p, const uint16_t *pe, uint16_t *spl, const uint16_t vc) {
+void mode2 (tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
   /*
      Standard-Bitmap-Modus (ECM / BMM / MCM = 0/1/0) ("HIRES")
      In diesem Modus (wie in allen Bitmap-Modi) liest der VIC die Grafikdaten aus einer 320×200-Bitmap,
@@ -585,7 +582,7 @@ void mode2 (uint16_t *p, const uint16_t *pe, uint16_t *spl, const uint16_t vc) {
   while (x<40) {BADLINE(x); x++;}
 }
 /*****************************************************************************************************/
-void mode3 (uint16_t *p, const uint16_t *pe, uint16_t *spl, const uint16_t vc) {
+void mode3 (tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
   /*
     Multicolor-Bitmap-Modus (ECM/BMM/MCM=0/1/1)
 
@@ -659,7 +656,7 @@ void mode3 (uint16_t *p, const uint16_t *pe, uint16_t *spl, const uint16_t vc) {
 
         sprite = *spl;
         *spl++ = 0;
-		
+
         if (sprite) {    // Sprite: Ja
           int spritenum = SPRITENUM(sprite);
           pixel = sprite & 0x0f; //Hintergrundgrafik
@@ -728,7 +725,7 @@ void mode3 (uint16_t *p, const uint16_t *pe, uint16_t *spl, const uint16_t vc) {
   while (x<40) {BADLINE(x); x++;}
 }
 /*****************************************************************************************************/
-void mode4 (uint16_t *p, const uint16_t *pe, uint16_t *spl, const uint16_t vc) {
+void mode4 (tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
   //ECM-Textmodus (ECM/BMM/MCM=1/0/0)
   /*
     Dieser Textmodus entspricht dem Standard-Textmodus, erlaubt es aber, für
@@ -775,7 +772,7 @@ void mode4 (uint16_t *p, const uint16_t *pe, uint16_t *spl, const uint16_t vc) {
 
         int sprite = *spl;
         *spl++ = 0;
-		
+
         if (sprite) {     // Sprite: Ja
           int spritenum = SPRITENUM(sprite);
           if (sprite & 0x4000) {   // Sprite: Hinter Text
@@ -847,7 +844,7 @@ void mode4 (uint16_t *p, const uint16_t *pe, uint16_t *spl, const uint16_t vc) {
 /* Ungültige Modi ************************************************************************************/
 /*****************************************************************************************************/
 
-void mode5 (uint16_t *p, const uint16_t *pe, uint16_t *spl, const uint16_t vc) {
+void mode5 (tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
   /*
     Ungültiger Textmodus (ECM/BMM/MCM=1/0/1)
 
@@ -887,7 +884,7 @@ void mode5 (uint16_t *p, const uint16_t *pe, uint16_t *spl, const uint16_t vc) {
 
           int sprite = *spl;
 		  *spl++ = 0;
-		  
+
           if (sprite) {     // Sprite: Ja
 
             /*
@@ -930,7 +927,7 @@ void mode5 (uint16_t *p, const uint16_t *pe, uint16_t *spl, const uint16_t vc) {
 
           int sprite = *spl;
 		  *spl++ = 0;
-		  
+
           if (sprite) {    // Sprite: Ja
             int spritenum = SPRITENUM(sprite);
             pixel = sprite & 0x0f; //Hintergrundgrafik
@@ -950,7 +947,7 @@ void mode5 (uint16_t *p, const uint16_t *pe, uint16_t *spl, const uint16_t vc) {
           }
           *p++ = cpu.vic.palette[pixel];
           if (p >= pe) break;
-		  
+
           sprite = *spl;
 		  *spl++ = 0;
           //Das gleiche nochmal für das nächste Pixel
@@ -1005,7 +1002,7 @@ void mode5 (uint16_t *p, const uint16_t *pe, uint16_t *spl, const uint16_t vc) {
   while (x<40) {BADLINE(x); x++;}
 }
 /*****************************************************************************************************/
-void mode6 (uint16_t *p, const uint16_t *pe, uint16_t *spl, const uint16_t vc) {
+void mode6 (tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
   /*
     Ungültiger Bitmap-Modus 1 (ECM/BMM/MCM=1/1/0)
 
@@ -1038,7 +1035,7 @@ void mode6 (uint16_t *p, const uint16_t *pe, uint16_t *spl, const uint16_t vc) {
 
         int sprite = *spl;
         *spl++ = 0;
-		
+
         chr = chr << 1;
         if (sprite) {     // Sprite: Ja
           /*
@@ -1101,7 +1098,7 @@ void mode6 (uint16_t *p, const uint16_t *pe, uint16_t *spl, const uint16_t vc) {
   while (x<40) {BADLINE(x); x++;}
 }
 /*****************************************************************************************************/
-void mode7 (uint16_t *p, const uint16_t *pe, uint16_t *spl, const uint16_t vc) {
+void mode7 (tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
   /*
     Ungültiger Bitmap-Modus 2 (ECM/BMM/MCM=1/1/1)
 
@@ -1137,7 +1134,7 @@ void mode7 (uint16_t *p, const uint16_t *pe, uint16_t *spl, const uint16_t vc) {
 
         int sprite = *spl;
 		*spl++ = 0;
-		
+
         if (sprite) {    // Sprite: Ja
           int spritenum = SPRITENUM(sprite);
           pixel = sprite & 0x0f;//Hintergrundgrafik
@@ -1156,10 +1153,10 @@ void mode7 (uint16_t *p, const uint16_t *pe, uint16_t *spl, const uint16_t vc) {
 
         *p++ = cpu.vic.palette[pixel];
         if (p >= pe) break;
-       
+
         sprite = *spl;
         *spl++ = 0;
-		
+
         if (sprite) {    // Sprite: Ja
           int spritenum = SPRITENUM(sprite);
           pixel = sprite & 0x0f;//Hintergrundgrafik
@@ -1215,7 +1212,7 @@ void mode7 (uint16_t *p, const uint16_t *pe, uint16_t *spl, const uint16_t vc) {
 /*****************************************************************************************************/
 /*****************************************************************************************************/
 
-typedef void (*modes_t)( uint16_t *p, const uint16_t *pe, uint16_t *spl, const uint16_t vc ); //Funktionspointer
+typedef void (*modes_t)( tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc ); //Funktionspointer
 const modes_t modes[8] = {mode0, mode1, mode2, mode3, mode4, mode5, mode6, mode7};
 
 
@@ -1223,8 +1220,8 @@ void vic_do(void) {
 
   uint16_t vc;
   uint16_t xscroll;
-  uint16_t *pe;
-  uint16_t *p;
+  tpixel *pe;
+  tpixel *p;
   uint16_t *spl;
 
   /*****************************************************************************************************/
@@ -1240,7 +1237,7 @@ void vic_do(void) {
     //reSID sound needs much time - too much to keep everything in sync and with stable refreshrate
     //but it is not called very often, so most of the time, we have more time than needed.
     //We can measure the time needed for a frame and calc a correction factor to speed things up.
-    unsigned long m = micros();
+    unsigned long m = fbmicros();
     cpu.vic.neededTime = (m - cpu.vic.timeStart);
     cpu.vic.timeStart = m;
     cpu.vic.lineClock.setIntervalFast(LINETIMER_DEFAULT_FREQ - ((float)cpu.vic.neededTime / (float)LINECNT - LINETIMER_DEFAULT_FREQ ));
@@ -1255,8 +1252,6 @@ void vic_do(void) {
 
   if (r == cpu.vic.intRasterLine )//Set Rasterline-Interrupt
     cpu.vic.R[0x19] |= 1 | ((cpu.vic.R[0x1a] & 1) << 7);
-
-
 
   /*****************************************************************************************************/
   /* Badlines ******************************************************************************************/
@@ -1286,9 +1281,9 @@ void vic_do(void) {
   */
 
   vc = cpu.vic.vcbase;
-  
+
   cpu.vic.badline = (cpu.vic.denLatch && (r >= 0x30) && (r <= 0xf7) && ( (r & 0x07) == cpu.vic.YSCROLL));
-  
+
   if (cpu.vic.badline) {
     cpu.vic.idle = 0;
     cpu.vic.rc = 0;
@@ -1335,21 +1330,17 @@ void vic_do(void) {
 
   //max_x =  (!cpu.vic.CSEL) ? 40:38;
   spl = &cpu.vic.spriteLine[24];
-  p = (uint16_t*)&screen[r - FIRSTDISPLAYLINE][0];
-  pe = (uint16_t*)&screen[r - FIRSTDISPLAYLINE][SCREEN_WIDTH];
+  p = SCREENMEM + (r - FIRSTDISPLAYLINE) * LINE_MEM_WIDTH;
+  pe = p + SCREEN_WIDTH;
 
   cpu_clock(6); //left screenborder, now 40 max cycles left.
+
 
   if (cpu.vic.borderFlag) {
     fastFillLineNoSprites(p, pe, cpu.vic.colors[0]);
     goto noDisplayIncRC ;
   }
 
-  /*
-    if (!cpu.vic.CSEL) {
-      pe -= 9;
-    }
-  */
 
   /*****************************************************************************************************/
   /* DISPLAY *******************************************************************************************/
@@ -1428,8 +1419,8 @@ void vic_do(void) {
   if (!cpu.vic.CSEL) {
     cpu_clock(1);
     uint16_t col = cpu.vic.colors[0];
-    p = &screen[r - FIRSTDISPLAYLINE][0];
-
+    //p = &screen[r - FIRSTDISPLAYLINE][0];
+	p = SCREENMEM +  (r - FIRSTDISPLAYLINE) * LINE_MEM_WIDTH;
 #if 0
     // Sprites im Rand
     uint16_t sprite;
@@ -1451,8 +1442,11 @@ void vic_do(void) {
 #endif
 
     //Rand rechts:
-    p = &screen[r - FIRSTDISPLAYLINE][SCREEN_WIDTH - 9];
-    pe = (uint16_t*)&screen[r - FIRSTDISPLAYLINE][SCREEN_WIDTH];
+    //p = &screen[r - FIRSTDISPLAYLINE][SCREEN_WIDTH - 9];
+	p = SCREENMEM +  (r - FIRSTDISPLAYLINE) * LINE_MEM_WIDTH + SCREEN_WIDTH - 9;
+    //pe = (uint16_t*)&screen[r - FIRSTDISPLAYLINE][SCREEN_WIDTH];
+	pe = p + 9;
+	//pe = SCREENMEM +  (r - FIRSTDISPLAYLINE + 1 ) * SCREEN_WIDTH - 1;
 
 #if 0
     // Sprites im Rand
@@ -1501,7 +1495,7 @@ noDisplayIncRC:
 #else
   cpu.vic.lineHasSprites = 0;
 #endif
-	
+
   uint32_t spriteYCheck = cpu.vic.R[0x15]; //Sprite enabled Register
 
   if (spriteYCheck) {
@@ -1677,7 +1671,8 @@ noDisplayIncRC:
 /*****************************************************************************************************/
 /*****************************************************************************************************/
 /*****************************************************************************************************/
-void fastFillLineNoSprites(uint16_t * p, const uint16_t * pe, const uint16_t col) {
+void fastFillLineNoSprites(tpixel * p, const tpixel * pe, const uint16_t col) {
+/*
   // 16Bit align to 32Bit
   while ( ( (uintptr_t)p & 0x03) != 0 && p < pe) {
     *p++ = col;
@@ -1691,11 +1686,13 @@ void fastFillLineNoSprites(uint16_t * p, const uint16_t * pe, const uint16_t col
   while ( p < pe ) {
     *p++ = col;
   }
-  memset(cpu.vic.spriteLine, 0, sizeof(cpu.vic.spriteLine) );
+*/
+  memset(p, col, (pe-p)*sizeof(tpixel));
+//  memset(cpu.vic.spriteLine, 0, sizeof(cpu.vic.spriteLine) );
   CYCLES(40);
 }
 
-void fastFillLine(uint16_t * p, const uint16_t * pe, const uint16_t col, uint16_t *  spl) {
+void fastFillLine(tpixel * p, const tpixel * pe, const uint16_t col, uint16_t *  spl) {
   uint16_t sprite;
 
   if (spl != NULL && cpu.vic.lineHasSprites) {
@@ -1727,10 +1724,10 @@ void vic_adrchange(void) {
       cpu.vic.charsetPtrBase = &cpu.RAM[charsetAddr * 0x400 + cpu.vic.bank] ;
   } else
     cpu.vic.charsetPtrBase = &cpu.RAM[charsetAddr * 0x400 + cpu.vic.bank];
-  
+
   cpu.vic.bitmapPtr = (uint8_t*) &cpu.RAM[cpu.vic.bank | ((r18 & 0x08) * 0x400)];
   if ((cpu.vic.R[0x11] & 0x60) == 0x60)  cpu.vic.bitmapPtr = (uint8_t*)((uintptr_t)cpu.vic.bitmapPtr & 0xf9ff);
-  
+
 }
 /*****************************************************************************************************/
 void vic_write(uint32_t address, uint8_t value) {
@@ -1744,13 +1741,13 @@ void vic_write(uint32_t address, uint8_t value) {
       if (cpu.vic.rasterLine == 0x30 ) cpu.vic.denLatch |= value & 0x10;
 
       cpu.vic.badline = (cpu.vic.denLatch && (cpu.vic.rasterLine >= 0x30) && (cpu.vic.rasterLine <= 0xf7) && ( (cpu.vic.rasterLine & 0x07) == (value & 0x07)));
-	  
-	  if (cpu.vic.badline) { 
-		cpu.vic.idle = 0;		
-	  } 
-      
+
+	  if (cpu.vic.badline) {
+		cpu.vic.idle = 0;
+	  }
+
 	  vic_adrchange();
-	  
+
       break;
     case 0x12 :
       cpu.vic.intRasterLine = (cpu.vic.intRasterLine & 0x100) | value;
@@ -1862,6 +1859,8 @@ uint8_t vic_read(uint32_t address) {
 /*****************************************************************************************************/
 
 void resetVic(void) {
+
+  enableCycleCounter();
 
   cpu.vic.intRasterLine = 0;
   cpu.vic.rasterLine = 0;

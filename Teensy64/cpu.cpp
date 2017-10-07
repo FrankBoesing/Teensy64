@@ -2608,7 +2608,8 @@ static const uint8_t writeCycleTable[256] =
 
 
 void cpu_nmi() {
-
+  cpu.nmiLine = 1;
+  Serial.println("nmiLine=1");
 }
 void cpu_clearNmi() {
 	cpu.nmi = 0;
@@ -2617,6 +2618,7 @@ void cpu_clearNmi() {
 void cpu_nmi_do() {
 	if (cpu.nmi) return;
 	cpu.nmi = 1;
+	cpu.nmiLine = 0;
 	push16(cpu.pc);
 	push8(cpu.cpustatus & ~FLAG_BREAK);
 	cpu.cpustatus |= FLAG_INTERRUPT;
@@ -2656,7 +2658,7 @@ static int writeCycles = 0;
 
 			//NMI
 
-			if (!cpu.nmi && (cpu.cia2.R[0x0D] & 0x80)) {
+			if (!cpu.nmi && ((cpu.cia2.R[0x0D] & 0x80) | cpu.nmiLine)) {
 				cpu_nmi_do();
 				goto noOpcode;
 			}
@@ -2698,6 +2700,7 @@ void cpu_setExactTiming() {
 }
 
 void cpu_reset() {
+  enableCycleCounter();
   cpu.exactTiming = 0;
   cpu.nmi = 0;
   cpu.cpustatus = FLAG_CONSTANT;

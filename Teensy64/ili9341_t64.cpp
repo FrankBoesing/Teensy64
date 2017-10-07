@@ -38,15 +38,11 @@
 
 #define SPICLOCK 144e6 //Just a number..max speed
 
-//#define SCREEN_DMA_MAX_SIZE 65536UL
-#define SCREEN_DMA_MAX_SIZE 0xD000
-#define SCREEN_DMA_NUM_SETTINGS (((uint32_t)((2 * ILI9341_TFTHEIGHT * ILI9341_TFTWIDTH) / SCREEN_DMA_MAX_SIZE))+1)
+
 
 //const int dma_linestarts[SCREEN_DMA_NUM_SETTINGS] =
 
 DMAMEM uint16_t screen[ILI9341_TFTHEIGHT][ILI9341_TFTWIDTH];
-DMASetting dmasettings[SCREEN_DMA_NUM_SETTINGS];
-DMAChannel dmatx;
 
 uint16_t * screen16 = (uint16_t*)&screen[0][0];
 uint32_t * screen32 = (uint32_t*)&screen[0][0];
@@ -183,6 +179,8 @@ void ILI9341_t3DMA::begin(void) {
   dmatx.begin(false);
   dmatx.triggerAtHardwareEvent(DMAMUX_SOURCE_SPI0_TX );
   dmatx = dmasettings[0];
+  Serial.print("ILI9341 DMA:");
+  Serial.println(dmatx.channel);
 
 };
 

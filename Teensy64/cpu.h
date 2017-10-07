@@ -1,5 +1,5 @@
 /*
-	Copyright Frank Bösing, 2017	
+	Copyright Frank Bösing, 2017
 
 	This file is part of Teensy64.
 
@@ -30,7 +30,7 @@
 
     Sie sollten eine Kopie der GNU General Public License zusammen mit diesem
     Programm erhalten haben. Wenn nicht, siehe <http://www.gnu.org/licenses/>.
-		
+
 */
 
 #ifndef Teensy64_cpu_h_
@@ -39,9 +39,9 @@
 #include <Arduino.h>
 #include <arm_math.h>
 
-#define INLINE 			static inline __attribute__((always_inline)) 
+#define INLINE 			static inline __attribute__((always_inline))
 #define INLINEOP 		static inline __attribute__((always_inline, flatten))
-#define OPCODE			static 
+#define OPCODE			static
 
 #define RAMSIZE 		65536	//Bytes
 
@@ -50,30 +50,30 @@
 #include "roms.h"
 #include "patches.h"
 #include "util.h"
-#include "pla.h" 
+#include "pla.h"
 #include "vic.h"
 #include "keyboard.h"
 #include "cia1.h"
 #include "cia2.h"
 
-#include <Audio.h>
+#if 1
 #include <reSID.h>
-
 extern AudioPlaySID  playSID;
+#endif
 
 #define BASE_STACK     0x100
 
 struct tcpu {
-  unsigned long exactTiming; 
+  unsigned long exactTiming;
 
   //6502 CPU registers
   uint8_t sp, a, x, y, cpustatus;
   uint8_t penaltyop, penaltyaddr;
   uint8_t nmi;
-  uint16_t pc;  
- 
+  uint16_t pc;
+
   //helper variables
-  uint16_t reladdr;  
+  uint16_t reladdr;
   uint16_t ea;
 
   unsigned ticks;
@@ -83,7 +83,8 @@ struct tcpu {
   r_rarr_ptr_t plamap_r; //Memory-Mapping read
   w_rarr_ptr_t plamap_w; //Memory-Mapping write
   uint8_t _exrom:1, _game:1;
-    
+  uint8_t nmiLine;
+
   tvic vic;
   tcia cia1;
   tcia cia2;
@@ -93,7 +94,7 @@ struct tcpu {
 	uint16_t RAM16[RAMSIZE/2];
 	uint32_t RAM32[RAMSIZE/4];
   };
-   
+
   uint8_t cartrigeLO[1]; //TODO
   uint8_t cartrigeHI[1]; //TODO
 

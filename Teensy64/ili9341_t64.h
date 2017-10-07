@@ -109,6 +109,10 @@
 
 #ifdef __cplusplus
 
+//#define SCREEN_DMA_MAX_SIZE 65536UL
+#define SCREEN_DMA_MAX_SIZE 0xD000
+#define SCREEN_DMA_NUM_SETTINGS (((uint32_t)((2 * ILI9341_TFTHEIGHT * ILI9341_TFTWIDTH) / SCREEN_DMA_MAX_SIZE))+1)
+
 extern uint32_t * screen32;
 
 class ILI9341_t3DMA
@@ -124,7 +128,8 @@ class ILI9341_t3DMA
 	void start(void);
 
  protected:
- 
+	DMAChannel dmatx;
+	DMASetting dmasettings[SCREEN_DMA_NUM_SETTINGS];
   	uint8_t _rst, _cs, _dc;
 	uint8_t _miso, _mosi, _sclk;
 

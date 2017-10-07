@@ -26,7 +26,7 @@
 
 #define PERIODIC_LIST_SIZE  32
 
-static uint32_t periodictable[PERIODIC_LIST_SIZE] __attribute__ ((aligned(4096), used));
+static UDMAMEM uint32_t periodictable[PERIODIC_LIST_SIZE] __attribute__ ((aligned(4096), used));
 static uint8_t  uframe_bandwidth[PERIODIC_LIST_SIZE*8];
 static uint8_t  port_state;
 #define PORT_STATE_DISCONNECTED   0
@@ -290,7 +290,7 @@ void USBHost::isr()
 			println("  port enabled");
 			port_state = PORT_STATE_RECOVERY;
 			// 10 ms reset recover (USB 2.0: TRSTRCY, page 151 & 188)
-			USBHS_GPTIMER0LD = 10000; // microseconds
+			USBHS_GPTIMER0LD = 40000; // microseconds
 			USBHS_GPTIMER0CTL = USBHS_GPTIMERCTL_RST | USBHS_GPTIMERCTL_RUN;
 			if (USBHS_PORTSC1 & USBHS_PORTSC_HSP) {
 				// turn on high-speed disconnect detector
@@ -302,6 +302,7 @@ void USBHost::isr()
 
 		}
 	}
+
 	if (stat & USBHS_USBSTS_TI0) { // timer 0
 		println("timer");
 		if (port_state == PORT_STATE_DEBOUNCE) {
@@ -514,7 +515,7 @@ bool USBHost::queue_Data_Transfer(Pipe_t *pipe, void *buffer, uint32_t len, USBD
 
 	// TODO: option for zero length packet?  Maybe in Pipe_t fields?
 
-	//println("new_Data_Transfer");
+	//Serial.println("new_Data_Transfer");
 	// allocate qTDs
 	transfer = allocate_Transfer();
 	if (!transfer) return false;
@@ -616,7 +617,7 @@ bool USBHost::queue_Transfer(Pipe_t *pipe, Transfer_t *transfer)
 
 static bool followup_Transfer(Transfer_t *transfer)
 {
-	//println("  Followup ", (uint32_t)transfer, HEX);
+	//Serial.println("  Followup ", (uint32_t)transfer, HEX);
 
 	if (!(transfer->qtd.token & 0x80)) {
 		// TODO: check error status

@@ -25,14 +25,14 @@
 
 
 // Memory allocation
+#define UDMAMEM __attribute__ ((section(".usbbuffers"), used))
+static UDMAMEM Device_t memory_Device[3];
+static UDMAMEM Pipe_t memory_Pipe[6] __attribute__ ((aligned(64)));
+static UDMAMEM Transfer_t memory_Transfer[24] __attribute__ ((aligned(64)));
 
-static Device_t memory_Device[3];
-static Pipe_t memory_Pipe[6] __attribute__ ((aligned(64)));
-static Transfer_t memory_Transfer[24] __attribute__ ((aligned(64)));
-
-static Device_t * free_Device_list = NULL;
-static Pipe_t * free_Pipe_list = NULL;
-static Transfer_t * free_Transfer_list = NULL;
+static UDMAMEM Device_t * free_Device_list = NULL;
+static UDMAMEM Pipe_t * free_Pipe_list = NULL;
+static UDMAMEM Transfer_t * free_Transfer_list = NULL;
 
 void USBHost::init_Device_Pipe_Transfer_memory(void)
 {

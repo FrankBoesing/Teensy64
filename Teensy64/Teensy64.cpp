@@ -36,13 +36,29 @@
 #include <Arduino.h>
 #include "Teensy64.h"
 
-uint8_t SDinitialized = 0;
 
+
+#if VGA
+#include <uVGA.h>
+#include <uVGA_valid_settings.h>
+DMAMEM static uint8_t _VGA_frame_buffer[UVGA_FB_SIZE(452, 600, 2)];
+uint8_t * VGA_frame_buffer = _VGA_frame_buffer;
+uVGA uvga;
+#else
 ILI9341_t3DMA tft = ILI9341_t3DMA(TFT_CS, TFT_DC, TFT_RST, TFT_MOSI, TFT_SCLK, TFT_MISO);
+#endif
 
+#include "vic_palette.h"
+
+#if 1
 AudioPlaySID        playSID;  //xy=105,306
 AudioOutputAnalog   audioout; //xy=476,333
 AudioConnection     patchCord1(playSID, 0 , audioout, 0);
+#endif
+
+SdFatSdio SD;
+uint8_t SDinitialized = 0;
+
 
 void resetMachine() {
   *(volatile uint32_t *)0xE000ED0C = 0x5FA0004;
@@ -91,38 +107,58 @@ void oneRasterLine(void) {
 }
 
 void initMachine() {
-#if F_BUS < 120000000
-#error Teensy64: Please select F_CPU=240MHz and F_BUS=120MHz
+
+#if F_CPU < 240000000
+#error Teensy64: Please select F_CPU=240MHz
 #endif
+
+#if !VGA && F_BUS < 120000000
+#error Teensy64: Please select F_BUS=120MHz
+#endif
+
   unsigned long m = millis();
 
-#if 1
   //enable sd-card pullups early
   PORTE_PCR0 = PORT_PCR_MUX(1) | PORT_PCR_PE | PORT_PCR_PS;   /* PULLUP SDHC.D1  */
   PORTE_PCR1 = PORT_PCR_MUX(1) | PORT_PCR_PE | PORT_PCR_PS;   /* PULLUP SDHC.D0  */
   PORTE_PCR3 = PORT_PCR_MUX(1) | PORT_PCR_PE | PORT_PCR_PS;   /* PULLUP SDHC.CMD */
   PORTE_PCR4 = PORT_PCR_MUX(1) | PORT_PCR_PE | PORT_PCR_PS;   /* PULLUP SDHC.D3  */
   PORTE_PCR5 = PORT_PCR_MUX(1) | PORT_PCR_PE | PORT_PCR_PS;   /* PULLUP SDHC.D2  */
-#endif
 
   pinMode(PIN_RESET, OUTPUT_OPENDRAIN);
   digitalWriteFast(PIN_RESET, 1);
 
+#if !VGA
   pinMode(TFT_TOUCH_CS, OUTPUT);
   digitalWriteFast(TFT_TOUCH_CS, 1);
+#endif
 
   LED_INIT;
   LED_ON;
+  disableEventResponder();
 
   Serial.begin(9600);
 
+#if USBHOST
   myusb.begin();
+#endif
 
+#if VGA==1
+
+  uvga.set_static_framebuffer(VGA_frame_buffer);
+  uvga.begin(&modeline);
+
+  uvga.clear(0);
+ // for (int i =0; i<285;i++) memset(VGA_frame_buffer + i*464, palette[14], 452-(37));
+  for (int i =0; i<299;i++) memset(VGA_frame_buffer + i*464, palette[3], 452-(37));
+
+#else
   tft.begin();
   tft.writeScreen((uint16_t*)logo_320x240);
   tft.refresh();
+#endif
 
-  SDinitialized = SD.begin(BUILTIN_SDCARD);
+  SDinitialized = SD.begin();
 
   unsigned audioSampleFreq;
   audioSampleFreq = setAudioSampleFreq(AUDIOSAMPLERATE);
@@ -149,13 +185,15 @@ void initMachine() {
   Serial.print("F_BUS (MHz): ");
   Serial.print((int)(F_BUS / 1e6));
   Serial.println();
-
+  Serial.print("Display: ");
+  Serial.println((VGA>0) ? "VGA":"TFT");
   Serial.println();
-  Serial.print("Emulated Video: ");
+
+  Serial.print("Emulated video: ");
   Serial.println(PAL ? "PAL" : "NTSC");
-  Serial.print("Video line frequency (Hz): ");
+  Serial.print("Emulated video line frequency (Hz): ");
   Serial.println(LINEFREQ, 3);
-  Serial.print("Video refresh rate (Hz): ");
+  Serial.print("Emulated video refresh rate (Hz): ");
   Serial.println(REFRESHRATE, 3);
 
   Serial.println();
@@ -190,13 +228,22 @@ void initMachine() {
   cpu.RAM[678] = (PAL == 1) ? 1 : 0; //PAL/NTSC switch, C64-Autodetection does not work with FASTBOOT
 #endif
 
+
   cpu.vic.lineClock.begin( oneRasterLine, LINETIMER_DEFAULT_FREQ);
   cpu.vic.lineClock.priority( ISR_PRIORITY_RASTERLINE );
 
   attachInterrupt(digitalPinToInterrupt(PIN_RESET), resetMachine, RISING);
 
+#if USBHOST
+  Serial.println("USB-HOST: Disabling Async transfers now.");
+  USBHS_USBCMD &= ~ ( USBHS_USBCMD_ASE);
+#endif
+
   listInterrupts();
 }
+
+
+// Switch off/replace Teensyduinos` yield and systick stuff
 
 void yield(void) {
   static volatile uint8_t running = 0;
@@ -210,6 +257,7 @@ void yield(void) {
     Serial.write(r);
   }
   do_sendString();
+
 
   running = 0;
 };

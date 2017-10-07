@@ -25,7 +25,7 @@
 #define USB_HOST_TEENSY36_
 
 #include <stdint.h>
-
+#define UDMAMEM __attribute__ ((section(".usbbuffers"), used))
 /************************************************/
 /*  Data Structure Definitions                  */
 /************************************************/

@@ -35,16 +35,33 @@
 #ifndef Teensy64_h_
 #define Teensy64_h_
 
-#include <SD.h>
-#include <SPI.h>
-#include <Audio.h>
+#include <Arduino.h>
+#include <SdFat.h>
+#include "settings.h"
+#include "output_dac.h"
 #include <reSID.h>
-//#include <XPT2046_Touchscreen.h>
 
-#include "usb_USBHost.h"
-#include "ili9341_t64.h"
-#include "cpu.h"
+#define VERSION "08"
+
+#if VGA
+#include <uVGA.h>
+extern uint8_t * VGA_frame_buffer;
+extern uVGA uvga;
+#else
+
 #include "logo.h"
+#include "ili9341_t64.h"
+extern ILI9341_t3DMA tft;
+//#include <XPT2046_Touchscreen.h> //Not used
+#endif
+
+
+#include "cpu.h"
+
+#if USBHOST
+#include "usb_USBHost.h"
+extern USBHost myusb;
+#endif
 
 
 void initMachine();
@@ -53,7 +70,6 @@ void resetExternal();
 unsigned loadFile(const char *filename);
 
 extern uint8_t SDinitialized;
-extern ILI9341_t3DMA tft;
-extern USBHost myusb;
+
 
 #endif

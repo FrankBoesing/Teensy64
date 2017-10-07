@@ -1,5 +1,5 @@
 /*
-Copyright Frank Bösing, 2017	
+Copyright Frank Bösing, 2017
 
 	This file is part of Teensy64.
 
@@ -30,17 +30,33 @@ Copyright Frank Bösing, 2017
 
     Sie sollten eine Kopie der GNU General Public License zusammen mit diesem
     Programm erhalten haben. Wenn nicht, siehe <http://www.gnu.org/licenses/>.
-		
-*/
 
+*/
+#include <Arduino.h>
 #include "util.h"
-#include <Audio.h>
+
+//Attention, don't use WFI-instruction - the CPU does not count cycles during sleep
+void enableCycleCounter(void) {
+  ARM_DEMCR |= ARM_DEMCR_TRCENA;
+  ARM_DWT_CTRL |= ARM_DWT_CTRL_CYCCNTENA;
+}
+
+extern "C" volatile uint32_t systick_millis_count;
+FASTRUN void mySystick_isr(void) { systick_millis_count++; }
+FASTRUN void myUnused_isr(void) {};
+
+void disableEventResponder(void) {
+	_VectorsRam[14] = myUnused_isr;  // pendablesrvreq
+	_VectorsRam[15] = mySystick_isr; // Short Systick
+}
+
+
 
 #define PDB_CONFIG (PDB_SC_TRGSEL(15) | PDB_SC_PDBEN | PDB_SC_CONT | PDB_SC_PDBIE | PDB_SC_DMAEN)
 
 static unsigned int setDACFreq(unsigned int freq) {
   if (!(SIM_SCGC6 & SIM_SCGC6_PDB)) return 0;
-  
+
   unsigned int t = (float)F_BUS / freq - 0.5f;
   PDB0_SC = 0;
   PDB0_IDLY = 1;
@@ -48,7 +64,7 @@ static unsigned int setDACFreq(unsigned int freq) {
   PDB0_SC = PDB_CONFIG | PDB_SC_LDOK;
   PDB0_SC = PDB_CONFIG | PDB_SC_SWTRIG;
   PDB0_CH0C1 = 0x0101;
-  return (float)F_BUS / t; 
+  return (float)F_BUS / t;
 }
 
 unsigned int setAudioSampleFreq(unsigned int freq) {
@@ -58,22 +74,29 @@ unsigned int setAudioSampleFreq(unsigned int freq) {
 }
 
 void setAudioOff(void) {
+
   if (!(SIM_SCGC6 & SIM_SCGC6_PDB)) return;
-  AudioNoInterrupts();
+  //AudioNoInterrupts();
   PDB0_SC = 0;
 }
 
 void setAudioOn(void) {
+
   if (!(SIM_SCGC6 & SIM_SCGC6_PDB)) return;
   PDB0_SC = PDB_CONFIG | PDB_SC_LDOK;
   PDB0_SC = PDB_CONFIG | PDB_SC_SWTRIG;
-  AudioInterrupts(); 
+  //AudioInterrupts();
 }
 
 void listInterrupts() {
-	
+
 #if defined(__MK66FX1M0__)
 const char isrName[][24] = {
+	//NMI
+	"","reset handler", "nmi", "hard fault", "memmanage fault", "bus fault", "usage fault",
+	"unknown fault","unknown fault","unknown fault", "unknown fault",
+	"svcall", "debugmonitor", "unknown fault", "pendablesrvreq", "systick timer",
+	//ISR
 	"dma_ch0","dma_ch1","dma_ch2","dma_ch3","dma_ch4","dma_ch5","dma_ch6","dma_ch7",
 	"dma_ch8","dma_ch9","dma_ch10","dma_ch11","dma_ch12","dma_ch13","dma_ch14","dma_ch15",
 	"dma_error","mcm","flash_cmd","flash_error","low_voltage","wakeup","watchdog",
@@ -86,34 +109,30 @@ const char isrName[][24] = {
 	"can0_error","can0_tx_warn","can0_rx_warn","can0_wakeup","sdhc","enet_timer","enet_tx",
 	"enet_rx","enet_error","lpuart0_status","tsi0","tpm1","tpm2","usbhs_phy","i2c3","cmp3",
 	"usbhs","can1_message","can1_bus_off","can1_error","can1_tx_warn","can1_rx_warn","can1_wakeup"};
-#endif	
-	
-  unsigned adrFaultNMI = (unsigned)_VectorsRam[3];
+#endif
+
+  //unsigned adrFaultNMI = (unsigned)_VectorsRam[3];
   unsigned adrUnusedInt = (unsigned)_VectorsRam[IRQ_FTFL_COLLISION + 16];//IRQ_FTFL_COLLISION is normally unused
   unsigned adr;
 
   Serial.println("Interrupts in use:");
-  
-#if 0  
+
+#if 1
   Serial.println("NMI (non-maskable):");
   for (unsigned i = 1; i < 16; i++) {
     adr = (unsigned)_VectorsRam[i];
     if (adr != adrUnusedInt) {
       Serial.print(i);
       Serial.print(": \t");
-      if (adr == adrFaultNMI) {
-        Serial.print("Fault NMI");
-      } else {
-        Serial.print("\t");
-      }      
+      Serial.print(isrName[i]);
       Serial.print("\t0x");
-      Serial.print(adr, HEX);      
+      Serial.print(adr, HEX);
       Serial.println();
     }
-     
+
   }
 #endif
-  
+
   Serial.println("IRQ:");
   for (unsigned i = 0; i < NVIC_NUM_INTERRUPTS; i++) {
     adr = (unsigned)_VectorsRam[i + 16];
@@ -123,10 +142,10 @@ const char isrName[][24] = {
       Serial.print("\tPriority:");
       Serial.print(NVIC_GET_PRIORITY(i));
       Serial.print("\t0x");
-      Serial.print(adr, HEX); 
+      Serial.print(adr, HEX);
 	  if (adr < 0x10000000) Serial.print("\t");
 	  Serial.print("\t");
-	  Serial.print(isrName[i]);
+	  Serial.print(isrName[i + 16]);
       if (NVIC_IS_ENABLED(i)) Serial.print("\t is enabled");
       Serial.println();
     }
