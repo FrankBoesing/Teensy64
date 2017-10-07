@@ -41,7 +41,5 @@ void setup () {
 }
 
 void loop () {
-  //Sweet idleness saves some mA:
-  asm volatile ("wfi"); 
 }
 
