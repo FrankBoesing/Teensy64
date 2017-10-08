@@ -82,7 +82,7 @@ uint16_t addr,size;
 		cpu.RAM[addr++] = blocks & 0xff;
 		cpu.RAM[addr++] = blocks >> 8;
 
-		const char title[] = "\x12\"TEENSY64        \" FB 07";
+		const char title[] = "\x12\"TEENSY64        \" FB " VERSION;
 		strcpy((char * )&cpu.RAM[addr], title);
 		addr = start + 30;
 

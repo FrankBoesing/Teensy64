@@ -349,8 +349,10 @@ void usbKeyboardmatrix(void * keys) { //Interrupt
       kbdData.shiftLock = ~kbdData.shiftLock;
       if (kbdData.shiftLock) {
         //Serial.println("ShiftLock: ON");
+		//  keyboard.LEDS(0x02);
       } else {
         //Serial.println("ShiftLock: OFF");
+		//  keyboard.LEDS(0x00);
       }
       return;
     }
@@ -545,7 +547,7 @@ void initJoysticks() {
 void initKeyboard() {
 #if USBHOST
   keyboard.attachC64(usbKeyboardmatrix);
-  
+ // keyboard.LEDS(0x07);
 #elif PS2KEYBOARD
   pinMode(PIN_PS2DATA, INPUT_PULLUP);
   pinMode(PIN_PS2INT, INPUT_PULLUP);

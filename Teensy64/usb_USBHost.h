@@ -289,6 +289,18 @@ protected:
 	uint8_t  portstate[7];
 };
 
+typedef union {
+   struct {
+        uint8_t numLock : 1;
+        uint8_t capsLock : 1;
+        uint8_t scrollLock : 1;
+        uint8_t compose : 1;
+        uint8_t kana : 1;
+        uint8_t reserved : 3;
+	};
+    uint8_t byte;
+} KBDLeds_t;
+
 class KeyboardController : public USBDriver {
 public:
 	KeyboardController();
@@ -301,6 +313,9 @@ public:
 	uint8_t getOemKey();
 	void    attachPress(void (*keyPressed)());
 	void    attachRelease(void (*keyReleased)());
+	void	 LEDS(uint8_t leds);
+	uint8_t  LEDS() {return leds_.byte;}
+	void	updateLEDS(void);	
 protected:
 	virtual bool claim(Device_t *device, int type, const uint8_t *descriptors, uint32_t len);
 	virtual void disconnect();
@@ -313,6 +328,7 @@ private:
 	void (*keyReleasedFunction)();
 	Pipe_t *datapipe;
 	uint8_t report[8];
+	KBDLeds_t leds_ = {0}; 	
 };
 
 

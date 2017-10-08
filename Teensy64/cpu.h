@@ -107,6 +107,7 @@ void cpu_nmi();
 void cpu_clearNmi();
 void cpu_clock(int cycles);
 void cpu_setExactTiming();
+void cpu_disableExactTiming();
 
 void cia_clockt(int ticks);
 #endif

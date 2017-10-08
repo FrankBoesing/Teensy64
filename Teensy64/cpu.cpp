@@ -2693,10 +2693,20 @@ noOpcode:
 //Enable "ExactTiming" Mode
 void cpu_setExactTiming() {
 	if (!cpu.exactTiming) {
+		//enable exact timing
 		LED_ON;
 		setAudioOff();
+		vic_displaySimpleModeScreen();
+		//vic_do_simple();
 	}
 	cpu.exactTiming = ARM_DWT_CYCCNT;
+}
+
+//Disable "ExactTiming" Mode
+void cpu_disableExactTiming() {
+    cpu.exactTiming = 0;
+    setAudioOn();
+    LED_OFF;	
 }
 
 void cpu_reset() {

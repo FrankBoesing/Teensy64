@@ -179,8 +179,8 @@ void ILI9341_t3DMA::begin(void) {
   dmatx.begin(false);
   dmatx.triggerAtHardwareEvent(DMAMUX_SOURCE_SPI0_TX );
   dmatx = dmasettings[0];
-  Serial.print("ILI9341 DMA:");
-  Serial.println(dmatx.channel);
+ // Serial.print("ILI9341 DMA:");
+ // Serial.println(dmatx.channel);
 
 };
 
@@ -188,8 +188,6 @@ void ILI9341_t3DMA::start(void) {
 
   pinMode(_dc, OUTPUT);
   pinMode(_cs, OUTPUT);
-
-  //SPI.usingInterrupt(IRQ_DMA_CH1);
 
   SPI.beginTransaction(SPISettings(SPICLOCK, MSBFIRST, SPI_MODE0));
   digitalWrite(_cs, 0);
@@ -242,4 +240,283 @@ void ILI9341_t3DMA::fillScreen(uint16_t color) {
 
 void ILI9341_t3DMA::writeScreen(const uint16_t *pcolors) {
   memcpy(&screen, pcolors, sizeof(screen));
+}
+
+void ILI9341_t3DMA::drawPixel(int16_t x, int16_t y, uint16_t color) {
+  screen[y][x] = color;
+}
+
+inline uint16_t ILI9341_t3DMA::getPixel(int16_t x, int16_t y) {
+  return screen[y][x];
+}
+
+void ILI9341_t3DMA::blur()
+{
+    int p, p1, p2, p3 ,p4;
+	uint8_t r, g, b;
+	uint8_t r1, g1, b1;
+	uint8_t r2, g2, b2;
+	uint8_t r3, g3, b3;
+	uint8_t r4, g4, b4;
+	
+    //todo borders
+	for (int x = 1; x < ILI9341_TFTWIDTH-2; x++) {
+		for (int y = 1; y < ILI9341_TFTHEIGHT-2; y++) {
+
+			p = getPixel(x,y);
+			p1 = getPixel(x-1,y);
+			p2 = getPixel(x+1,y);
+			p3 = getPixel(x,y-1);
+			p4 = getPixel(x,y+2);
+			color565toRGB(p, r,g,b);
+			color565toRGB(p1, r1,g1,b1);
+			color565toRGB(p2, r2,g2,b2);
+			color565toRGB(p3, r3,g3,b3);
+			color565toRGB(p4, r4,g4,b4);
+			
+			r = r/2 + (r1 + r2 + r3 + r4) / 8;
+			g = g/2 + (g1 + g2 + g3 + g4) / 8 ;
+			b = b/2 + (b1 + b2 + b3 + b4) / 8 ;
+			
+			drawPixel(x,y, color565(r, g, b));
+		}
+	}
+	
+}
+
+void ILI9341_t3DMA::dim()
+{
+    int p;
+	uint8_t r, g, b;
+
+	
+    //todo borders
+	for (int x = 0; x < ILI9341_TFTWIDTH; x++) {
+		for (int y = 0; y < ILI9341_TFTHEIGHT; y++) {
+
+			p = getPixel(x,y);
+			color565toRGB(p, r,g,b);
+
+			r = min(r, 192);
+			if (r < 64) r = 0;
+			g = min(g, 192);
+			if (g < 64) g = 0;
+			b = min(b, 192);
+			if (b < 64) b = 0;
+			
+			drawPixel(x,y, color565(r>>1, g>>1, b>>1));
+		}
+	}
+	
+}
+/*******************************************************************************************************************/
+/*FONTS*************************************************************************************************************/
+/*******************************************************************************************************************/
+
+static uint32_t fetchbit(const uint8_t *p, uint32_t index)
+{
+	if (p[index >> 3] & (1 << (7 - (index & 7)))) return 1;
+	return 0;
+}
+
+static uint32_t fetchbits_unsigned(const uint8_t *p, uint32_t index, uint32_t required)
+{
+	uint32_t val = 0;
+	do {
+		uint8_t b = p[index >> 3];
+		uint32_t avail = 8 - (index & 7);
+		if (avail <= required) {
+			val <<= avail;
+			val |= b & ((1 << avail) - 1);
+			index += avail;
+			required -= avail;
+		} else {
+			b >>= avail - required;
+			val <<= required;
+			val |= b & ((1 << required) - 1);
+			break;
+		}
+	} while (required);
+	return val;
+}
+
+static uint32_t fetchbits_signed(const uint8_t *p, uint32_t index, uint32_t required)
+{
+	uint32_t val = fetchbits_unsigned(p, index, required);
+	if (val & (1 << (required - 1))) {
+		return (int32_t)val - (1 << required);
+	}
+	return (int32_t)val;
+}
+
+
+void ILI9341_t3DMA::drawFontChar(unsigned int c)
+{
+	uint32_t bitoffset;
+	const uint8_t *data;
+
+	//Serial.printf("drawFontChar %d\n", c);
+
+	if (c >= font->index1_first && c <= font->index1_last) {
+		bitoffset = c - font->index1_first;
+		bitoffset *= font->bits_index;
+	} else if (c >= font->index2_first && c <= font->index2_last) {
+		bitoffset = c - font->index2_first + font->index1_last - font->index1_first + 1;
+		bitoffset *= font->bits_index;
+	} else if (font->unicode) {
+		return; // TODO: implement sparse unicode
+	} else {
+		return;
+	}
+	//Serial.printf("  index =	%d\n", fetchbits_unsigned(font->index, bitoffset, font->bits_index));
+	data = font->data + fetchbits_unsigned(font->index, bitoffset, font->bits_index);
+
+	uint32_t encoding = fetchbits_unsigned(data, 0, 3);
+	if (encoding != 0) return;
+	uint32_t width = fetchbits_unsigned(data, 3, font->bits_width);
+	bitoffset = font->bits_width + 3;
+	uint32_t height = fetchbits_unsigned(data, bitoffset, font->bits_height);
+	bitoffset += font->bits_height;
+	//Serial.printf("  size =	%d,%d\n", width, height);
+
+	int32_t xoffset = fetchbits_signed(data, bitoffset, font->bits_xoffset);
+	bitoffset += font->bits_xoffset;
+	int32_t yoffset = fetchbits_signed(data, bitoffset, font->bits_yoffset);
+	bitoffset += font->bits_yoffset;
+	//Serial.printf("  offset = %d,%d\n", xoffset, yoffset);
+
+	uint32_t delta = fetchbits_unsigned(data, bitoffset, font->bits_delta);
+	bitoffset += font->bits_delta;
+	//Serial.printf("  delta =	%d\n", delta);
+
+	//Serial.printf("  cursor = %d,%d\n", cursor_x, cursor_y);
+
+	// horizontally, we draw every pixel, or none at all
+	if (cursor_x < 0) cursor_x = 0;
+	int32_t origin_x = cursor_x + xoffset;
+	if (origin_x < 0) {
+		cursor_x -= xoffset;
+		origin_x = 0;
+	}
+	if (origin_x + (int)width > ILI9341_TFTWIDTH) {		
+		origin_x = 0;
+		if (xoffset >= 0) {
+			cursor_x = 0;
+		} else {
+			cursor_x = -xoffset;
+		}
+		cursor_y += font->line_space;
+	}
+	if (cursor_y >= ILI9341_TFTHEIGHT) return;
+	cursor_x += delta;
+
+	// vertically, the top and/or bottom can be clipped
+	int32_t origin_y = cursor_y + font->cap_height - height - yoffset;
+	//Serial.printf("  origin = %d,%d\n", origin_x, origin_y);
+
+	// TODO: compute top skip and number of lines
+	int32_t linecount = height;
+	//uint32_t loopcount = 0;
+	uint32_t y = origin_y;
+	while (linecount) {
+		//Serial.printf("	 linecount = %d\n", linecount);
+		uint32_t b = fetchbit(data, bitoffset++);
+		if (b == 0) {
+			//Serial.println("	  single line");
+			uint32_t x = 0;
+			do {
+				uint32_t xsize = width - x;
+				if (xsize > 32) xsize = 32;
+				uint32_t bits = fetchbits_unsigned(data, bitoffset, xsize);
+				drawFontBits(bits, xsize, origin_x + x, y, 1);
+				bitoffset += xsize;
+				x += xsize;
+			} while (x < width);
+			y++;
+			linecount--;
+		} else {
+			uint32_t n = fetchbits_unsigned(data, bitoffset, 3) + 2;
+			bitoffset += 3;
+			uint32_t x = 0;
+			do {
+				uint32_t xsize = width - x;
+				if (xsize > 32) xsize = 32;
+				//Serial.printf("	 multi line %d\n", n);
+				uint32_t bits = fetchbits_unsigned(data, bitoffset, xsize);
+				drawFontBits(bits, xsize, origin_x + x, y, n);
+				bitoffset += xsize;
+				x += xsize;
+			} while (x < width);
+			y += n;
+			linecount -= n;
+		}
+		//if (++loopcount > 100) {
+			//Serial.println("	   abort draw loop");
+			//break;
+		//}
+	}
+}
+
+void ILI9341_t3DMA::drawFontBits(uint32_t bits, uint32_t numbits, uint32_t x, uint32_t y, uint32_t repeat)
+{
+#if 1
+	// TODO: replace this *slow* code with something fast...
+	//Serial.printf("	   %d bits at %d,%d: %X\n", numbits, x, y, bits);
+	if (bits == 0) return;
+	do {
+		uint32_t x1 = x;
+		uint32_t n = numbits;
+		do {
+			n--;
+			if (bits & (1 << n)) {
+				drawPixel(x1, y, textcolor);
+				//Serial.printf("		 pixel at %d,%d\n", x1, y);
+			}
+			x1++;
+		} while (n > 0);
+		y++;
+		repeat--;
+	} while (repeat);
+#endif
+#if 0
+	if (bits == 0) return;
+	int w = 0;
+	do {
+		uint32_t x1 = x;
+		uint32_t n = numbits;
+		writecommand_cont(ILI9341_PASET); // Row addr set
+		writedata16_cont(y);   // YSTART
+		writedata16_cont(y);   // YEND
+		do {
+			n--;
+			if (bits & (1 << n)) {
+				w++;
+			}
+			else if (w > 0) {
+				// "drawFastHLine(x1 - w, y, w, textcolor)"
+				writecommand_cont(ILI9341_CASET); // Column addr set
+				writedata16_cont(x1 - w);	// XSTART
+				writedata16_cont(x1);	// XEND
+				writecommand_cont(ILI9341_RAMWR);
+				while (w-- > 1) { // draw line
+					writedata16_cont(textcolor);
+				}
+				writedata16_last(textcolor);
+			}
+			x1++;
+		} while (n > 0);
+		if (w > 0) {
+				writecommand_cont(ILI9341_CASET); // Column addr set
+				writedata16_cont(x1 - w);	// XSTART
+				writedata16_cont(x1);	// XEND
+				writecommand_cont(ILI9341_RAMWR);
+				while (w-- > 1) { //draw line
+					writedata16_cont(textcolor);
+				}
+				writedata16_last(textcolor);
+		}
+		y++;
+		repeat--;
+	} while (repeat);
+#endif
 }

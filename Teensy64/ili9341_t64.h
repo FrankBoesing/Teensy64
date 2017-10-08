@@ -113,9 +113,29 @@
 #define SCREEN_DMA_MAX_SIZE 0xD000
 #define SCREEN_DMA_NUM_SETTINGS (((uint32_t)((2 * ILI9341_TFTHEIGHT * ILI9341_TFTWIDTH) / SCREEN_DMA_MAX_SIZE))+1)
 
+typedef struct {
+	const unsigned char *index;
+	const unsigned char *unicode;
+	const unsigned char *data;
+	unsigned char version;
+	unsigned char reserved;
+	unsigned char index1_first;
+	unsigned char index1_last;
+	unsigned char index2_first;
+	unsigned char index2_last;
+	unsigned char bits_index;
+	unsigned char bits_width;
+	unsigned char bits_height;
+	unsigned char bits_xoffset;
+	unsigned char bits_yoffset;
+	unsigned char bits_delta;
+	unsigned char line_space;
+	unsigned char cap_height;
+} ILI9341_t3_font_t;
+
 extern uint32_t * screen32;
 
-class ILI9341_t3DMA
+class ILI9341_t3DMA : public Print
 {
   public:
   	ILI9341_t3DMA(uint8_t _CS, uint8_t _DC, uint8_t _RST = 255, uint8_t _MOSI=11, uint8_t _SCLK=13, uint8_t _MISO=12);
@@ -124,14 +144,43 @@ class ILI9341_t3DMA
 
 	void fillScreen(uint16_t color);
 	void writeScreen(const uint16_t *pcolors);
-	static uint16_t color565(uint8_t r, uint8_t g, uint8_t b) { return ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3); }
+	uint16_t color565(uint8_t r, uint8_t g, uint8_t b) { return ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3); }
+	
+	//color565toRGB		- converts 565 format 16 bit color to 8-Bit RGB
+	void color565toRGB(uint16_t color, uint8_t &r, uint8_t &g, uint8_t &b) {
+		r = (color>>8)&0x00F8;
+		g = (color>>3)&0x00FC;
+		b = (color<<3)&0x00F8;
+	}
+
 	void start(void);
 
+	void drawPixel(int16_t x, int16_t y, uint16_t color);
+	uint16_t getPixel(int16_t x, int16_t y);
+	
+	void blur();
+	void dim();
+	
+	void setCursor(int16_t x, int16_t y) {cursor_x = x; cursor_y = y;};    
+	void setTextColor(uint16_t c) {textcolor = textbgcolor = c;};
+	void setTextColor(uint16_t c, uint16_t bg)  {textcolor = c; textbgcolor = bg;};
+	
+	int16_t getCursorX(void) const { return cursor_x; }
+	int16_t getCursorY(void) const { return cursor_y; }
+	void setFont(const ILI9341_t3_font_t &f) { font = &f; }	
+	
+	void drawFontBits(uint32_t bits, uint32_t numbits, uint32_t x, uint32_t y, uint32_t repeat);
+	void drawFontChar(unsigned int c);
+	size_t write(uint8_t c) { drawFontChar(c);return 1; }
+	
  protected:
 	DMAChannel dmatx;
 	DMASetting dmasettings[SCREEN_DMA_NUM_SETTINGS];
   	uint8_t _rst, _cs, _dc;
 	uint8_t _miso, _mosi, _sclk;
+	const ILI9341_t3_font_t *font;	
+	int16_t  cursor_x, cursor_y;
+	uint16_t textcolor, textbgcolor;
 
 };
 

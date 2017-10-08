@@ -86,7 +86,11 @@ void oneRasterLine(void) {
     cpu.lineStartTime = ARM_DWT_CYCCNT;
     cpu.lineCycles = 0;
 
-    vic_do();
+    if (!cpu.exactTiming) {
+		vic_do();
+	} else {
+		vic_do_simple();
+	}
 
     if (--lc == 0) {
       lc = LINEFREQ / 10; // 10Hz
@@ -97,9 +101,7 @@ void oneRasterLine(void) {
     //Switch "ExactTiming" Mode off after a while:
     if (!cpu.exactTiming) break;
     if (ARM_DWT_CYCCNT - cpu.exactTiming >= EXACTTIMINGDURATION * (F_CPU / 1000)) {
-      cpu.exactTiming = 0;
-      setAudioOn();
-      LED_OFF;
+	  cpu_disableExactTiming();
       break;
     }
   };
@@ -236,7 +238,7 @@ void initMachine() {
 
 #if USBHOST
   Serial.println("USB-HOST: Disabling Async transfers now.");
-  USBHS_USBCMD &= ~ ( USBHS_USBCMD_ASE);
+  usbHostSetAsyncTransfers(false);
 #endif
 
   listInterrupts();

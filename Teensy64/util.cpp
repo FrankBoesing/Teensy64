@@ -53,7 +53,6 @@ void disableEventResponder(void) {
 
 
 #define PDB_CONFIG (PDB_SC_TRGSEL(15) | PDB_SC_PDBEN | PDB_SC_CONT | PDB_SC_PDBIE | PDB_SC_DMAEN)
-
 static unsigned int setDACFreq(unsigned int freq) {
   if (!(SIM_SCGC6 & SIM_SCGC6_PDB)) return 0;
 
@@ -76,7 +75,9 @@ unsigned int setAudioSampleFreq(unsigned int freq) {
 void setAudioOff(void) {
 
   if (!(SIM_SCGC6 & SIM_SCGC6_PDB)) return;
-  //AudioNoInterrupts();
+  NVIC_DISABLE_IRQ(IRQ_USBOTG);
+  //NVIC_DISABLE_IRQ(IRQ_USBHS);
+  AudioNoInterrupts();
   PDB0_SC = 0;
 }
 
@@ -85,7 +86,9 @@ void setAudioOn(void) {
   if (!(SIM_SCGC6 & SIM_SCGC6_PDB)) return;
   PDB0_SC = PDB_CONFIG | PDB_SC_LDOK;
   PDB0_SC = PDB_CONFIG | PDB_SC_SWTRIG;
-  //AudioInterrupts();
+  AudioInterrupts();
+  NVIC_ENABLE_IRQ(IRQ_USBOTG);
+  //NVIC_ENABLE_IRQ(IRQ_USBHS);
 }
 
 void listInterrupts() {

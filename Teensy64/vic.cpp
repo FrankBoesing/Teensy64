@@ -54,6 +54,10 @@
 #include "vic.h"
 #include "vic_palette.h"
 
+
+#include "font_Play-Regular.h"
+#include "font_Play-Bold.h"
+
 #define MAXCYCLESSPRITES0_2       7
 #define MAXCYCLESSPRITES3_7        10
 #define MAXCYCLESSPRITES    (MAXCYCLESSPRITES0_2 + MAXCYCLESSPRITES3_7)
@@ -1298,9 +1302,9 @@ void vic_do(void) {
     if (cpu.vic.spriteCycles3_7 > 0) cia_clockt(cpu.vic.spriteCycles3_7);
   }
 
-#if 1
-  cpu_clock(2); //BUGBUG THIS IS NEEDED FOR the demo " DELIRIOUS "
-  cpu_clock(2); //Two more cycles  for " COMMANDO " to prevent problems when scrolling
+  
+#ifdef ADDITIONALCYCLES
+  cpu_clock(ADDITIONALCYCLES); 
 #endif
 
   //cpu.vic.videomatrix =  cpu.vic.bank + (unsigned)(cpu.vic.R[0x18] & 0xf0) * 64;
@@ -1700,6 +1704,117 @@ void fastFillLine(tpixel * p, const tpixel * pe, const uint16_t col, uint16_t * 
 /*****************************************************************************************************/
 /*****************************************************************************************************/
 /*****************************************************************************************************/
+
+void vic_displaySimpleModeScreen(void) {
+	tft.blur();
+	tft.blur();
+	tft.blur();
+	tft.dim();
+
+	tft.setFont(Play_60_Bold);
+	tft.setTextColor(0xffff);
+	tft.setCursor(25,40);
+	tft.print("IEC");
+	tft.setCursor(25,130);
+	tft.print("Access");
+	//tft.blur();
+}
+
+
+void vic_do_simple(void) {
+  uint16_t vc;
+  int cycles = 0;
+  
+if ( cpu.vic.rasterLine >= LINECNT ) {
+
+    //reSID sound needs much time - too much to keep everything in sync and with stable refreshrate
+    //but it is not called very often, so most of the time, we have more time than needed.
+    //We can measure the time needed for a frame and calc a correction factor to speed things up.
+    unsigned long m = fbmicros();
+    cpu.vic.neededTime = (m - cpu.vic.timeStart);
+    cpu.vic.timeStart = m;
+    cpu.vic.lineClock.setIntervalFast(LINETIMER_DEFAULT_FREQ - ((float)cpu.vic.neededTime / (float)LINECNT - LINETIMER_DEFAULT_FREQ ));
+
+    cpu.vic.rasterLine = 0;
+    cpu.vic.vcbase = 0;
+    cpu.vic.denLatch = 0;
+
+  } else  {
+	  cpu.vic.rasterLine++;
+	  cpu_clock(1);
+	  cycles += 1;
+  }
+
+  int r = cpu.vic.rasterLine;
+
+  if (r == cpu.vic.intRasterLine )//Set Rasterline-Interrupt
+    cpu.vic.R[0x19] |= 1 | ((cpu.vic.R[0x1a] & 1) << 7);
+
+  cpu_clock(9);
+  cycles += 9;
+ 
+  if (r == 0x30 ) cpu.vic.denLatch |= cpu.vic.DEN;
+
+  vc = cpu.vic.vcbase;
+
+  cpu.vic.badline = (cpu.vic.denLatch && (r >= 0x30) && (r <= 0xf7) && ( (r & 0x07) == cpu.vic.YSCROLL));
+
+  if (cpu.vic.badline) {
+    cpu.vic.idle = 0;
+    cpu.vic.rc = 0;
+  }
+
+
+  /* Rand oben /unten **********************************************************************************/
+  /*
+    RSEL  Höhe des Anzeigefensters  Erste Zeile   Letzte Zeile
+    0 24 Textzeilen/192 Pixel 55 ($37)  246 ($f6) = 192 sichtbare Zeilen, der Rest ist Rand oder unsichtbar
+    1 25 Textzeilen/200 Pixel 51 ($33)  250 ($fa) = 200 sichtbare Zeilen, der Rest ist Rand oder unsichtbar
+  */
+
+  if (cpu.vic.borderFlag) {
+    int firstLine = (cpu.vic.RSEL) ? 0x33 : 0x37;
+    if ((cpu.vic.DEN) && (r == firstLine)) cpu.vic.borderFlag = false;
+  } else {
+    int lastLine = (cpu.vic.RSEL) ? 0xfb : 0xf7;
+    if (r == lastLine) cpu.vic.borderFlag = true;
+  }
+
+
+ //left screenborder
+ cpu_clock(6);
+ cycles += 6;
+ 
+ CYCLES(40);
+ cycles += 40;
+ vc += 40;
+ 
+ //right screenborder
+ cpu_clock(4); //1
+ cycles += 4;
+  
+
+  if (cpu.vic.rc == 7) {
+    cpu.vic.idle = 1;
+    cpu.vic.vcbase = vc;
+  }
+  //Ist dies richtig ??
+  if ((!cpu.vic.idle) || (cpu.vic.denLatch && (r >= 0x30) && (r <= 0xf7) && ( (r & 0x07) == cpu.vic.YSCROLL))) {
+    cpu.vic.rc = (cpu.vic.rc + 1) & 0x07;
+  }
+
+  cpu_clock(3); //1
+ cycles += 3;
+ 
+ int cyclesleft = CYCLESPERRASTERLINE - cycles;
+ if (cyclesleft) cpu_clock(cyclesleft);  
+  
+}
+
+/*****************************************************************************************************/
+/*****************************************************************************************************/
+/*****************************************************************************************************/
+
 void vic_adrchange(void) {
   uint8_t r18 = cpu.vic.R[0x18];
   cpu.vic.videomatrix =  cpu.vic.bank + (unsigned)(r18 & 0xf0) * 64;
@@ -1881,7 +1996,7 @@ void resetVic(void) {
 
 /*
   ?PEEK(678) NTSC =0
-  ?PEEK(678) PAL = 1
+  ?PEEK(678) PAL = 1 
   PRINT TIME$
 */
 /*

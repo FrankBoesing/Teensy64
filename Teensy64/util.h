@@ -36,12 +36,23 @@ Copyright Frank Bösing, 2017
 #ifndef _UTIL_C64H_
 #define _UTIL_C64H_
 
+#define AudioNoInterrupts() (NVIC_DISABLE_IRQ(IRQ_SOFTWARE))
+#define AudioInterrupts()   (NVIC_ENABLE_IRQ(IRQ_SOFTWARE))
+
 void disableEventResponder(void); 
 
 void enableCycleCounter(void);
 inline unsigned fbmillis(void)  __attribute__((always_inline));
 inline unsigned fbmicros(void)  __attribute__((always_inline));
 inline unsigned fbnanos(void) __attribute__((always_inline));
+
+inline __attribute__((always_inline))
+void usbHostSetAsyncTransfers(bool enable) {
+	if (enable) 
+		USBHS_USBCMD |= USBHS_USBCMD_ASE;
+	else
+		USBHS_USBCMD &= ~USBHS_USBCMD_ASE;
+}
 
 unsigned fbmillis(void) { return (ARM_DWT_CYCCNT * (1000.0/F_CPU)); }
 unsigned fbmicros(void) { return (ARM_DWT_CYCCNT * (1000000.0/F_CPU)); }

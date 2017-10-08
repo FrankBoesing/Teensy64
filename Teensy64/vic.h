@@ -161,6 +161,8 @@ struct tvic {
 };
 
 void vic_do(void);
+void vic_do_simple(void);
+void vic_displaySimpleModeScreen(void);
 
 void vic_write(uint32_t address, uint8_t value) ;
 uint8_t vic_read(uint32_t address);
