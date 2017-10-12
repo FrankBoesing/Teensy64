@@ -100,7 +100,7 @@ void oneRasterLine(void) {
 
     //Switch "ExactTiming" Mode off after a while:
     if (!cpu.exactTiming) break;
-    if (ARM_DWT_CYCCNT - cpu.exactTiming >= EXACTTIMINGDURATION * (F_CPU / 1000)) {
+    if (ARM_DWT_CYCCNT - cpu.exactTimingStartTime >= EXACTTIMINGDURATION * (F_CPU / 1000)) {
 	  cpu_disableExactTiming();
       break;
     }

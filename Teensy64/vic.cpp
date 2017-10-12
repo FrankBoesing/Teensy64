@@ -1706,9 +1706,7 @@ void fastFillLine(tpixel * p, const tpixel * pe, const uint16_t col, uint16_t * 
 /*****************************************************************************************************/
 
 void vic_displaySimpleModeScreen(void) {
-	tft.blur();
-	tft.blur();
-	tft.blur();
+
 	tft.dim();
 
 	tft.setFont(Play_60_Bold);
@@ -1717,7 +1715,6 @@ void vic_displaySimpleModeScreen(void) {
 	tft.print("IEC");
 	tft.setCursor(25,130);
 	tft.print("Access");
-	//tft.blur();
 }
 
 

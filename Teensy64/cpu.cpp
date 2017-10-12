@@ -2697,9 +2697,10 @@ void cpu_setExactTiming() {
 		LED_ON;
 		setAudioOff();
 		vic_displaySimpleModeScreen();
-		//vic_do_simple();
+		
 	}
-	cpu.exactTiming = ARM_DWT_CYCCNT;
+	cpu.exactTiming = 1;
+	cpu.exactTimingStartTime = ARM_DWT_CYCCNT;
 }
 
 //Disable "ExactTiming" Mode

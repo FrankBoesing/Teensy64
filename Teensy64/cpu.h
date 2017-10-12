@@ -64,8 +64,9 @@ extern AudioPlaySID  playSID;
 #define BASE_STACK     0x100
 
 struct tcpu {
-  unsigned long exactTiming;
-
+  uint32_t exactTimingStartTime;
+  uint8_t exactTiming;
+	
   //6502 CPU registers
   uint8_t sp, a, x, y, cpustatus;
   uint8_t penaltyop, penaltyaddr;
@@ -95,6 +96,8 @@ struct tcpu {
 	uint32_t RAM32[RAMSIZE/4];
   };
 
+  
+  
   uint8_t cartrigeLO[1]; //TODO
   uint8_t cartrigeHI[1]; //TODO
 

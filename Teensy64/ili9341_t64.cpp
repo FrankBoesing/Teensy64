@@ -250,61 +250,17 @@ inline uint16_t ILI9341_t3DMA::getPixel(int16_t x, int16_t y) {
   return screen[y][x];
 }
 
-void ILI9341_t3DMA::blur()
-{
-    int p, p1, p2, p3 ,p4;
-	uint8_t r, g, b;
-	uint8_t r1, g1, b1;
-	uint8_t r2, g2, b2;
-	uint8_t r3, g3, b3;
-	uint8_t r4, g4, b4;
-	
-    //todo borders
-	for (int x = 1; x < ILI9341_TFTWIDTH-2; x++) {
-		for (int y = 1; y < ILI9341_TFTHEIGHT-2; y++) {
-
-			p = getPixel(x,y);
-			p1 = getPixel(x-1,y);
-			p2 = getPixel(x+1,y);
-			p3 = getPixel(x,y-1);
-			p4 = getPixel(x,y+2);
-			color565toRGB(p, r,g,b);
-			color565toRGB(p1, r1,g1,b1);
-			color565toRGB(p2, r2,g2,b2);
-			color565toRGB(p3, r3,g3,b3);
-			color565toRGB(p4, r4,g4,b4);
-			
-			r = r/2 + (r1 + r2 + r3 + r4) / 8;
-			g = g/2 + (g1 + g2 + g3 + g4) / 8 ;
-			b = b/2 + (b1 + b2 + b3 + b4) / 8 ;
-			
-			drawPixel(x,y, color565(r, g, b));
-		}
-	}
-	
-}
 
 void ILI9341_t3DMA::dim()
 {
     int p;
 	uint8_t r, g, b;
 
-	
-    //todo borders
 	for (int x = 0; x < ILI9341_TFTWIDTH; x++) {
 		for (int y = 0; y < ILI9341_TFTHEIGHT; y++) {
-
 			p = getPixel(x,y);
-			color565toRGB(p, r,g,b);
-
-			r = min(r, 192);
-			if (r < 64) r = 0;
-			g = min(g, 192);
-			if (g < 64) g = 0;
-			b = min(b, 192);
-			if (b < 64) b = 0;
-			
-			drawPixel(x,y, color565(r>>1, g>>1, b>>1));
+			color565toRGB(p, r,g,b);			
+			drawPixel(x,y, color565(r>>2, g>>2, b>>2));
 		}
 	}
 	

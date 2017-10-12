@@ -54,11 +54,13 @@ void cia2_write(uint32_t address, uint8_t value) {
   switch (address) {
 
     case 0x00 : {
-      WRITE_ATN_CLK_DATA(value);
-	  
       if (!(value & 0x18)) {
         cpu_setExactTiming();
       }
+		
+	  WRITE_ATN_CLK_DATA(value);
+	  
+
       cpu.vic.bank = ((~value) & 0x03) * 16384;
       vic_adrchange();
       cpu.cia2.R[address] = value;
