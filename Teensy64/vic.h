@@ -44,30 +44,33 @@
 #if VGA
 
 #define BORDER         36 // Top/Bottom Screen border
-#define BORDER_LEFT	   17*8
-#define BORDER_RIGHT   6*8
 #define SCREEN_WIDTH   320
 #define LINE_MEM_WIDTH 464
 #define FIRSTDISPLAYLINE ( 51 - BORDER ) - 1
 #define LASTDISPLAYLINE  ( 284 )
-#define BORDER_LEFT
 
-#define XOFFSET		    48
+#define XOFFSET		    4
 #define YOFFSET		    16
+#define BORDER_LEFT     48
+#define BORDER_RIGHT    40
 typedef uint8_t tpixel ;
 #define SCREENMEM VGA_frame_buffer + LINE_MEM_WIDTH * YOFFSET + XOFFSET
 
 #else
 
 #include "ili9341_t64.h"
-#define TFT_HEIGHT  ILI9341_TFTHEIGHT
-#define TFT_WIDTH   ILI9341_TFTWIDTH
-#define BORDER      20
+#define TFT_HEIGHT  	240
+#define TFT_WIDTH   	320
+#define BORDER      	20
 #define SCREEN_HEIGHT (200+2*BORDER)
-#define SCREEN_WIDTH   TFT_WIDTH
-#define LINE_MEM_WIDTH TFT_WIDTH
+#define SCREEN_WIDTH   320
+#define LINE_MEM_WIDTH 320
 #define FIRSTDISPLAYLINE (  51 - BORDER )
 #define LASTDISPLAYLINE  ( 250 + BORDER )
+
+#define BORDER_LEFT     0
+#define BORDER_RIGHT    0
+
 typedef uint16_t tpixel;
 extern uint16_t screen[TFT_HEIGHT][TFT_WIDTH];
 #define SCREENMEM (uint16_t*)&screen
@@ -152,7 +155,8 @@ struct tvic {
   };
 
   //tsprite spriteInfo[8];//todo
-  uint16_t spriteLine[SCREEN_WIDTH + 24 * 2];
+  //uint16_t spriteLine[SCREEN_WIDTH + 24 * 2];
+  uint16_t spriteLine[512];
 
   uint8_t lineMemChr[40];
   uint8_t lineMemCol[40];

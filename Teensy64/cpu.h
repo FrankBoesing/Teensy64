@@ -77,8 +77,9 @@ struct tcpu {
   uint16_t reladdr;
   uint16_t ea;
 
+  uint16_t lineCyclesAbs; //for debug
   unsigned ticks;
-  unsigned lineCycles;
+  unsigned lineCycles;  
   unsigned long lineStartTime;
 
   r_rarr_ptr_t plamap_r; //Memory-Mapping read

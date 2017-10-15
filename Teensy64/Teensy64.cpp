@@ -84,7 +84,7 @@ void oneRasterLine(void) {
   while (true) {
 
     cpu.lineStartTime = ARM_DWT_CYCCNT;
-    cpu.lineCycles = 0;
+    cpu.lineCycles = cpu.lineCyclesAbs = 0;
 
     if (!cpu.exactTiming) {
 		vic_do();
@@ -127,9 +127,14 @@ void initMachine() {
   PORTE_PCR4 = PORT_PCR_MUX(1) | PORT_PCR_PE | PORT_PCR_PS;   /* PULLUP SDHC.D3  */
   PORTE_PCR5 = PORT_PCR_MUX(1) | PORT_PCR_PE | PORT_PCR_PS;   /* PULLUP SDHC.D2  */
 
-  pinMode(PIN_RESET, OUTPUT_OPENDRAIN);
-  digitalWriteFast(PIN_RESET, 1);
 
+  PORTE_PCR6 = PORT_PCR_MUX(1);
+  GPIOE_PDDR |= (1<<6);
+  GPIOE_PSOR = (1<<6); // turn on USB host power for VGA Board
+
+  pinMode(PIN_RESET, OUTPUT_OPENDRAIN);
+  digitalWriteFast(PIN_RESET, 1);	
+  
 #if !VGA
   pinMode(TFT_TOUCH_CS, OUTPUT);
   digitalWriteFast(TFT_TOUCH_CS, 1);
@@ -151,8 +156,7 @@ void initMachine() {
   uvga.begin(&modeline);
 
   uvga.clear(0);
- // for (int i =0; i<285;i++) memset(VGA_frame_buffer + i*464, palette[14], 452-(37));
-  for (int i =0; i<299;i++) memset(VGA_frame_buffer + i*464, palette[3], 452-(37));
+ // for (int i =0; i<299;i++) memset(VGA_frame_buffer + i*464, palette[14], 452-(37));
 
 #else
   tft.begin();
@@ -262,5 +266,6 @@ void yield(void) {
 
 
   running = 0;
+  asm ("WFE");
 };
 

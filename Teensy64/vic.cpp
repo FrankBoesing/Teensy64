@@ -58,8 +58,8 @@
 #include "font_Play-Regular.h"
 #include "font_Play-Bold.h"
 
-#define MAXCYCLESSPRITES0_2       7
-#define MAXCYCLESSPRITES3_7        10
+#define MAXCYCLESSPRITES0_2       3
+#define MAXCYCLESSPRITES3_7        5
 #define MAXCYCLESSPRITES    (MAXCYCLESSPRITES0_2 + MAXCYCLESSPRITES3_7)
 
 
@@ -1295,14 +1295,17 @@ void vic_do(void) {
 
   /*****************************************************************************************************/
   /*****************************************************************************************************/
-
+#if 1
   {
     int t = MAXCYCLESSPRITES3_7 - cpu.vic.spriteCycles3_7;
     if (t > 0) cpu_clock(t);
     if (cpu.vic.spriteCycles3_7 > 0) cia_clockt(cpu.vic.spriteCycles3_7);
   }
-
-  
+#endif
+   
+   //HBlank:
+   cpu_clock(10);
+   
 #ifdef ADDITIONALCYCLES
   cpu_clock(ADDITIONALCYCLES); 
 #endif
@@ -1326,22 +1329,66 @@ void vic_do(void) {
 
   if (r < FIRSTDISPLAYLINE || r > LASTDISPLAYLINE ) {
     if (r == 0)
-      cpu_clock(CYCLESPERRASTERLINE - MAXCYCLESSPRITES - 1);
+      cpu_clock(CYCLESPERRASTERLINE - 10 - 2 - MAXCYCLESSPRITES - 1); // (minus hblank l + r)
     else
-      cpu_clock(CYCLESPERRASTERLINE - MAXCYCLESSPRITES);
+      cpu_clock(CYCLESPERRASTERLINE - 10 - 2 - MAXCYCLESSPRITES  );
     goto noDisplayIncRC;
   }
 
-  //max_x =  (!cpu.vic.CSEL) ? 40:38;
-  spl = &cpu.vic.spriteLine[24];
+  //max_x =  (!cpu.vic.CSEL) ? 40:38;  
   p = SCREENMEM + (r - FIRSTDISPLAYLINE) * LINE_MEM_WIDTH;
-  pe = p + SCREEN_WIDTH;
 
-  cpu_clock(6); //left screenborder, now 40 max cycles left.
+   
+#if !VGA   
+  pe = p + SCREEN_WIDTH;    
+  //Left Screenborder: Cycle 10
+  spl = &cpu.vic.spriteLine[24];
+  cpu_clock(6);
+#else 
+  pe = p + SCREEN_WIDTH + BORDER_LEFT;
+  uint16_t col;
+  col = cpu.vic.colors[0];
 
+  //Left Screenborder: Cycle 10 
+  for (int i = 0; i <3; i++) {
+	cpu_clock(1);
+	*p++ = col;*p++ = col;*p++ = col;*p++ = col;
+	*p++ = col;*p++ = col;*p++ = col;*p++ = col;
+  }
+  
+  //Left Screenborder: Cycle 13 
+#if 0  //mit Sprites
+  spl = &cpu.vic.spriteLine[0];
+  uint16_t sprite;
+  for (int i=0; i<3; i++) {
+	  cpu_clock(1);
+	  SPRITEORFIXEDCOLOR();
+	  SPRITEORFIXEDCOLOR();
+	  SPRITEORFIXEDCOLOR();
+	  SPRITEORFIXEDCOLOR();
+	  SPRITEORFIXEDCOLOR();
+	  SPRITEORFIXEDCOLOR();
+	  SPRITEORFIXEDCOLOR();
+	  SPRITEORFIXEDCOLOR();
+  }
+#else //ohne sprites
+  spl = &cpu.vic.spriteLine[24];
+  for (int i=0; i<3; i++) {
+	  cpu_clock(1);
+	  *p++ = col;*p++ = col;*p++ = col;*p++ = col;
+	  *p++ = col;*p++ = col;*p++ = col;*p++ = col;	  
+  }
+    
+#endif 
+	
+#endif
 
   if (cpu.vic.borderFlag) {
-    fastFillLineNoSprites(p, pe, cpu.vic.colors[0]);
+
+#if !VGA  
+	cpu_clock(5);
+#endif	
+    fastFillLineNoSprites(p, pe + BORDER_RIGHT, cpu.vic.colors[0]);
     goto noDisplayIncRC ;
   }
 
@@ -1350,12 +1397,13 @@ void vic_do(void) {
   /* DISPLAY *******************************************************************************************/
   /*****************************************************************************************************/
 
+
   //max_x =  (!cpu.vic.CSEL) ? 40:38;
   //X-Scrolling:
 
   xscroll = cpu.vic.XSCROLL;
 
-  if (xscroll > 0) {
+  if (xscroll > 0) {	
     uint16_t col = cpu.vic.colors[0];
 
     if (!cpu.vic.CSEL) {
@@ -1424,7 +1472,7 @@ void vic_do(void) {
     cpu_clock(1);
     uint16_t col = cpu.vic.colors[0];
     //p = &screen[r - FIRSTDISPLAYLINE][0];
-	p = SCREENMEM +  (r - FIRSTDISPLAYLINE) * LINE_MEM_WIDTH;
+	p = SCREENMEM +  (r - FIRSTDISPLAYLINE) * LINE_MEM_WIDTH  + BORDER_LEFT;
 #if 0
     // Sprites im Rand
     uint16_t sprite;
@@ -1444,14 +1492,12 @@ void vic_do(void) {
     *p++ = col; *p++ = col; *p = col;
 
 #endif
-
+	  
     //Rand rechts:
     //p = &screen[r - FIRSTDISPLAYLINE][SCREEN_WIDTH - 9];
-	p = SCREENMEM +  (r - FIRSTDISPLAYLINE) * LINE_MEM_WIDTH + SCREEN_WIDTH - 9;
-    //pe = (uint16_t*)&screen[r - FIRSTDISPLAYLINE][SCREEN_WIDTH];
+	p = SCREENMEM +  (r - FIRSTDISPLAYLINE) * LINE_MEM_WIDTH + SCREEN_WIDTH - 9 + BORDER_LEFT;
 	pe = p + 9;
-	//pe = SCREENMEM +  (r - FIRSTDISPLAYLINE + 1 ) * SCREEN_WIDTH - 1;
-
+	
 #if 0
     // Sprites im Rand
     spl = &cpu.vic.spriteLine[24 + SCREEN_WIDTH - 9 + xscroll];
@@ -1467,7 +1513,27 @@ void vic_do(void) {
 
   }
 
-noDisplayIncRC:
+  
+//Rechter Rand nach CSEL, im Textbereich
+cpu_clock(5);
+#if VGA
+  p = SCREENMEM +  (r - FIRSTDISPLAYLINE) * LINE_MEM_WIDTH + SCREEN_WIDTH + BORDER_LEFT;
+  pe += BORDER_RIGHT;
+#if 0
+    // Sprites im Rand
+    while (p < pe) {
+      SPRITEORFIXEDCOLOR();
+    }
+#else
+    //keine Sprites im Rand
+    while (p < pe) {
+      *p++ = col;
+    }
+#endif
+
+#endif  
+    
+noDisplayIncRC:  
   /* 3.7.2
     5. In der ersten Phase von Zyklus 58 wird geprüft, ob RC=7 ist. Wenn ja,
      geht die Videologik in den Idle-Zustand und VCBASE wird mit VC geladen
@@ -1663,11 +1729,31 @@ noDisplayIncRC:
 
   }
   /*****************************************************************************************************/
+#if 1   
   {
     int t = MAXCYCLESSPRITES0_2 - cpu.vic.spriteCycles0_2;
     if (t > 0) cpu_clock(t);
     if (cpu.vic.spriteCycles0_2 > 0) cia_clockt(cpu.vic.spriteCycles0_2);
   }
+#endif
+
+   //HBlank:   
+#if PAL
+   cpu_clock(2);
+#else
+   cpu_clock(3);
+#endif
+   
+   
+#if 0
+   if (cpu.vic.idle) {
+	   Serial.print("Cycles line ");
+	   Serial.print(r);
+	   Serial.print(": ");
+	   Serial.println(cpu.lineCyclesAbs);
+   }
+#endif
+  
 
   return;
 }
@@ -1677,11 +1763,14 @@ noDisplayIncRC:
 /*****************************************************************************************************/
 void fastFillLineNoSprites(tpixel * p, const tpixel * pe, const uint16_t col) {
   int i = 0;  
+  
   while (p < pe) {
 		*p++ = col;  
 		i = (i + 1) & 0x07;
 		if (!i) CYCLES(1);
   }
+  
+  
 }
 
 void fastFillLine(tpixel * p, const tpixel * pe, const uint16_t col, uint16_t *  spl) {
@@ -1706,7 +1795,7 @@ void fastFillLine(tpixel * p, const tpixel * pe, const uint16_t col, uint16_t * 
 /*****************************************************************************************************/
 
 void vic_displaySimpleModeScreen(void) {
-
+#if !VGA
 	tft.dim();
 
 	tft.setFont(Play_60_Bold);
@@ -1715,6 +1804,7 @@ void vic_displaySimpleModeScreen(void) {
 	tft.print("IEC");
 	tft.setCursor(25,130);
 	tft.print("Access");
+#endif	
 }
 
 

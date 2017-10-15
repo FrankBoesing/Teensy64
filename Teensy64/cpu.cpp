@@ -2649,7 +2649,7 @@ void cia_clockt(int ticks) {
 void cpu_clock(int cycles) {
 static int c = 0;
 static int writeCycles = 0;
-
+	cpu.lineCyclesAbs += cycles;
     c+=cycles;
 	while (c > 0) {
 

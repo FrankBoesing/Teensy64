@@ -55,23 +55,7 @@
 #endif
 
 
-//At the moment, some Games and Demos need additional 6502-Cycles.
-//Mid-term, I'll try to fix this .
-//
-//Demo "Delirious 9" : use 1 Additional Cycle
-//Game "Commando": use 3 Additional Cycles
-//
-//Please mail me, if you know more such programs!
-//
-//Default is 0
-//
-#ifndef ADDITIONALCYCLES 
-#define ADDITIONALCYCLES 0
-#endif
-
-
-
-#define EXACTTIMINGDURATION 400ul //ms exact timing after IEC-BUS activity
+#define EXACTTIMINGDURATION 800ul //ms exact timing after IEC-BUS activity
 
 
 //
@@ -82,7 +66,7 @@
 #if PAL == 1
 #define CRYSTAL       	17734475.0f
 #define CLOCKSPEED      ( CRYSTAL / 18.0f) // 985248,61 Hz
-#define CYCLESPERRASTERLINE 64
+#define CYCLESPERRASTERLINE 63
 #define LINECNT         312 //Rasterlines
 #define VBLANK_FIRST    300
 #define VBLANK_LAST     15
@@ -90,7 +74,7 @@
 #else
 #define CRYSTAL       	14318180.0f
 #define CLOCKSPEED      ( CRYSTAL / 14.0f) // 1022727,14 Hz
-#define CYCLESPERRASTERLINE 63
+#define CYCLESPERRASTERLINE 64
 #define LINECNT       	263 //Rasterlines
 #define VBLANK_FIRST    13
 #define VBLANK_LAST     40
@@ -126,20 +110,20 @@
 
 #if PS2KEYBOARD
 
-#define PIN_PS2DATA 1
-#define PIN_PS2INT  0
+#define PIN_PS2DATA 27
+#define PIN_PS2INT  24
 
 #endif
 
 #if VGA
 #define UVGA_240M_452X300
 #define PIN_RESET       25 //PTA5
-#define PIN_SERIAL_ATN   4 //PTA13
+#define PIN_SERIAL_ATN   3 //PTA13
 #define PIN_SERIAL_CLK  26 //PTA14
-#define PIN_SERIAL_DATA 27 //PTA15
-#define PIN_SERIAL_SRQ  36 //PTC9
+#define PIN_SERIAL_DATA 28 //PTA15
+#define PIN_SERIAL_SRQ   4 //PTC9
 
-#if 0
+#if 1
 #define WRITE_ATN_CLK_DATA(value) { \
     digitalWriteFast(PIN_SERIAL_ATN, (~value & 0x08));\
 	digitalWriteFast(PIN_SERIAL_CLK, (~value & 0x10));\
@@ -164,15 +148,15 @@
 #define PIN_JOY1_3       18
 #define PIN_JOY1_4       19
 #define PIN_JOY1_A1     A12
-#define PIN_JOY1_A2     A13
+#define PIN_JOY1_A2     A19
 
 #define PIN_JOY2_BTN    37
 #define PIN_JOY2_1      15
 #define PIN_JOY2_2      23
 #define PIN_JOY2_3      35
 #define PIN_JOY2_4      36
-#define PIN_JOY2_A1     A14
-#define PIN_JOY2_A2     A15
+#define PIN_JOY2_A1     A13
+#define PIN_JOY2_A2     A20
 
 #else //ILI9341
 
