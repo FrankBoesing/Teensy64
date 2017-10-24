@@ -92,13 +92,13 @@ void fastFillLineNoSprites(tpixel * p, const tpixel * pe, const uint16_t col);
   };
 
 #define SPRITEORFIXEDCOLOR() \
-  sprite = *spl; \
-  *spl++ = 0; \
+  sprite = *spl++; \
   if (sprite) { \
-    *p++ = cpu.vic.palette[sprite & 0x0f];\
+    *p++ = cpu.vic.palette[sprite & 0x0f]; \
   } else { \
-    *p++ = col;\
-  };
+    *p++ = col; \
+  }
+
 
 #if 0
 #define PRINTOVERFLOW   \
@@ -159,8 +159,7 @@ void mode0 (tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
 	  x++;
       unsigned m = min(8, pe - p);
       for (unsigned i = 0; i < m; i++) {
-        int sprite = *spl;
-		*spl++ = 0;
+        int sprite = *spl++;
 
         if (sprite) {     // Sprite: Ja
 		  int spritenum = SPRITENUM(sprite);
@@ -292,8 +291,8 @@ void mode1 (tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
         unsigned m = min(8, pe - p);
         for (unsigned i = 0; i < m; i++) {
 
-          int sprite = *spl;
-		  *spl++ = 0;
+          int sprite = *spl++;
+
           if (sprite) {     // Sprite: Ja
 
             /*
@@ -333,8 +332,8 @@ void mode1 (tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
           int c = (chr >> 6) & 0x03;
           chr = chr << 2;
 
-          int sprite = *spl;
-		  *spl++ = 0;
+          int sprite = *spl++;
+
           if (sprite) {    // Sprite: Ja
             int spritenum = SPRITENUM(sprite);
 			pixel = sprite & 0x0f; //Hintergrundgrafik
@@ -356,8 +355,8 @@ void mode1 (tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
           *p++ = cpu.vic.palette[pixel];
           if (p >= pe) break;
 
-          sprite = *spl;
-		  *spl++ = 0;
+          sprite = *spl++;
+
           //Das gleiche nochmal für das nächste Pixel
           if (sprite) {    // Sprite: Ja
             int spritenum = SPRITENUM(sprite);
@@ -505,8 +504,8 @@ void mode2 (tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
       unsigned m = min(8, pe - p);
       for (unsigned i = 0; i < m; i++) {
 
-        int sprite = *spl;
-        *spl++ = 0;
+        int sprite = *spl++;
+
         chr = chr << 1;
         if (sprite) {     // Sprite: Ja
           /*
@@ -638,8 +637,8 @@ void mode3 (tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
         uint32_t c = (chr >> 6) & 0x03;
         chr = chr << 2;
 
-        int sprite = *spl;
-		*spl++ = 0;
+        int sprite = *spl++;
+
         if (sprite) {    // Sprite: Ja
           int spritenum = SPRITENUM(sprite);
           pixel = sprite & 0x0f; //Hintergrundgrafik
@@ -658,8 +657,7 @@ void mode3 (tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
         *p++ = cpu.vic.palette[pixel];
         if (p >= pe) break;
 
-        sprite = *spl;
-        *spl++ = 0;
+        sprite = *spl++;
 
         if (sprite) {    // Sprite: Ja
           int spritenum = SPRITENUM(sprite);
@@ -774,8 +772,7 @@ void mode4 (tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
       unsigned m = min(8, pe - p);
       for (unsigned i = 0; i < m; i++) {
 
-        int sprite = *spl;
-        *spl++ = 0;
+        int sprite = *spl++;
 
         if (sprite) {     // Sprite: Ja
           int spritenum = SPRITENUM(sprite);
@@ -1302,12 +1299,12 @@ void vic_do(void) {
     if (cpu.vic.spriteCycles3_7 > 0) cia_clockt(cpu.vic.spriteCycles3_7);
   }
 #endif
-   
+
    //HBlank:
    cpu_clock(10);
-   
+
 #ifdef ADDITIONALCYCLES
-  cpu_clock(ADDITIONALCYCLES); 
+  cpu_clock(ADDITIONALCYCLES);
 #endif
 
   //cpu.vic.videomatrix =  cpu.vic.bank + (unsigned)(cpu.vic.R[0x18] & 0xf0) * 64;
@@ -1335,28 +1332,28 @@ void vic_do(void) {
     goto noDisplayIncRC;
   }
 
-  //max_x =  (!cpu.vic.CSEL) ? 40:38;  
+  //max_x =  (!cpu.vic.CSEL) ? 40:38;
   p = SCREENMEM + (r - FIRSTDISPLAYLINE) * LINE_MEM_WIDTH;
 
-   
-#if !VGA   
-  pe = p + SCREEN_WIDTH;    
+
+#if !VGA
+  pe = p + SCREEN_WIDTH;
   //Left Screenborder: Cycle 10
   spl = &cpu.vic.spriteLine[24];
   cpu_clock(6);
-#else 
+#else
   pe = p + SCREEN_WIDTH + BORDER_LEFT;
   uint16_t col;
   col = cpu.vic.colors[0];
 
-  //Left Screenborder: Cycle 10 
+  //Left Screenborder: Cycle 10
   for (int i = 0; i <3; i++) {
 	cpu_clock(1);
 	*p++ = col;*p++ = col;*p++ = col;*p++ = col;
 	*p++ = col;*p++ = col;*p++ = col;*p++ = col;
   }
-  
-  //Left Screenborder: Cycle 13 
+
+  //Left Screenborder: Cycle 13
 #if 0  //mit Sprites
   spl = &cpu.vic.spriteLine[0];
   uint16_t sprite;
@@ -1376,18 +1373,18 @@ void vic_do(void) {
   for (int i=0; i<3; i++) {
 	  cpu_clock(1);
 	  *p++ = col;*p++ = col;*p++ = col;*p++ = col;
-	  *p++ = col;*p++ = col;*p++ = col;*p++ = col;	  
+	  *p++ = col;*p++ = col;*p++ = col;*p++ = col;
   }
-    
-#endif 
-	
+
+#endif
+
 #endif
 
   if (cpu.vic.borderFlag) {
 
-#if !VGA  
+#if !VGA
 	cpu_clock(5);
-#endif	
+#endif
     fastFillLineNoSprites(p, pe + BORDER_RIGHT, cpu.vic.colors[0]);
     goto noDisplayIncRC ;
   }
@@ -1403,7 +1400,7 @@ void vic_do(void) {
 
   xscroll = cpu.vic.XSCROLL;
 
-  if (xscroll > 0) {	
+  if (xscroll > 0) {
     uint16_t col = cpu.vic.colors[0];
 
     if (!cpu.vic.CSEL) {
@@ -1492,12 +1489,12 @@ void vic_do(void) {
     *p++ = col; *p++ = col; *p = col;
 
 #endif
-	  
+
     //Rand rechts:
     //p = &screen[r - FIRSTDISPLAYLINE][SCREEN_WIDTH - 9];
 	p = SCREENMEM +  (r - FIRSTDISPLAYLINE) * LINE_MEM_WIDTH + SCREEN_WIDTH - 9 + BORDER_LEFT;
 	pe = p + 9;
-	
+
 #if 0
     // Sprites im Rand
     spl = &cpu.vic.spriteLine[24 + SCREEN_WIDTH - 9 + xscroll];
@@ -1513,7 +1510,7 @@ void vic_do(void) {
 
   }
 
-  
+
 //Rechter Rand nach CSEL, im Textbereich
 cpu_clock(5);
 #if VGA
@@ -1531,9 +1528,9 @@ cpu_clock(5);
     }
 #endif
 
-#endif  
-    
-noDisplayIncRC:  
+#endif
+
+noDisplayIncRC:
   /* 3.7.2
     5. In der ersten Phase von Zyklus 58 wird geprüft, ob RC=7 ist. Wenn ja,
      geht die Videologik in den Idle-Zustand und VCBASE wird mit VC geladen
@@ -1558,17 +1555,15 @@ noDisplayIncRC:
   cpu.vic.spriteCycles0_2 = 0;
   cpu.vic.spriteCycles3_7 = 0;
 
-#if 0 //Debug clear spriteline
   if (cpu.vic.lineHasSprites) {
     memset(cpu.vic.spriteLine, 0, sizeof(cpu.vic.spriteLine) );
   }
-#else
-  cpu.vic.lineHasSprites = 0;
-#endif
 
+  cpu.vic.lineHasSprites = 0;
   uint32_t spriteYCheck = cpu.vic.R[0x15]; //Sprite enabled Register
 
   if (spriteYCheck) {
+
 
     unsigned short R17 = cpu.vic.R[0x17]; //Sprite-y-expansion
     unsigned char collision = 0;
@@ -1729,7 +1724,7 @@ noDisplayIncRC:
 
   }
   /*****************************************************************************************************/
-#if 1   
+#if 0
   {
     int t = MAXCYCLESSPRITES0_2 - cpu.vic.spriteCycles0_2;
     if (t > 0) cpu_clock(t);
@@ -1737,14 +1732,14 @@ noDisplayIncRC:
   }
 #endif
 
-   //HBlank:   
+   //HBlank:
 #if PAL
    cpu_clock(2);
 #else
    cpu_clock(3);
 #endif
-   
-   
+
+
 #if 0
    if (cpu.vic.idle) {
 	   Serial.print("Cycles line ");
@@ -1753,7 +1748,7 @@ noDisplayIncRC:
 	   Serial.println(cpu.lineCyclesAbs);
    }
 #endif
-  
+
 
   return;
 }
@@ -1762,15 +1757,15 @@ noDisplayIncRC:
 /*****************************************************************************************************/
 /*****************************************************************************************************/
 void fastFillLineNoSprites(tpixel * p, const tpixel * pe, const uint16_t col) {
-  int i = 0;  
-  
+  int i = 0;
+
   while (p < pe) {
-		*p++ = col;  
+		*p++ = col;
 		i = (i + 1) & 0x07;
 		if (!i) CYCLES(1);
   }
-  
-  
+
+
 }
 
 void fastFillLine(tpixel * p, const tpixel * pe, const uint16_t col, uint16_t *  spl) {
@@ -1780,7 +1775,7 @@ void fastFillLine(tpixel * p, const tpixel * pe, const uint16_t col, uint16_t * 
     while ( p < pe ) {
 		SPRITEORFIXEDCOLOR();
 		i = (i + 1) & 0x07;
-		if (!i) CYCLES(1);	  
+		if (!i) CYCLES(1);
     };
 
   } else {
@@ -1804,14 +1799,14 @@ void vic_displaySimpleModeScreen(void) {
 	tft.print("IEC");
 	tft.setCursor(25,130);
 	tft.print("Access");
-#endif	
+#endif
 }
 
 
 void vic_do_simple(void) {
   uint16_t vc;
   int cycles = 0;
-  
+
 if ( cpu.vic.rasterLine >= LINECNT ) {
 
     //reSID sound needs much time - too much to keep everything in sync and with stable refreshrate
@@ -1839,7 +1834,7 @@ if ( cpu.vic.rasterLine >= LINECNT ) {
 
   cpu_clock(9);
   cycles += 9;
- 
+
   if (r == 0x30 ) cpu.vic.denLatch |= cpu.vic.DEN;
 
   vc = cpu.vic.vcbase;
@@ -1871,15 +1866,15 @@ if ( cpu.vic.rasterLine >= LINECNT ) {
  //left screenborder
  cpu_clock(6);
  cycles += 6;
- 
+
  CYCLES(40);
  cycles += 40;
  vc += 40;
- 
+
  //right screenborder
  cpu_clock(4); //1
  cycles += 4;
-  
+
 
   if (cpu.vic.rc == 7) {
     cpu.vic.idle = 1;
@@ -1892,10 +1887,10 @@ if ( cpu.vic.rasterLine >= LINECNT ) {
 
   cpu_clock(3); //1
  cycles += 3;
- 
+
  int cyclesleft = CYCLESPERRASTERLINE - cycles;
- if (cyclesleft) cpu_clock(cyclesleft);  
-  
+ if (cyclesleft) cpu_clock(cyclesleft);
+
 }
 
 /*****************************************************************************************************/
@@ -2083,7 +2078,7 @@ void resetVic(void) {
 
 /*
   ?PEEK(678) NTSC =0
-  ?PEEK(678) PAL = 1 
+  ?PEEK(678) PAL = 1
   PRINT TIME$
 */
 /*

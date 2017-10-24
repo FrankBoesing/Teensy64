@@ -108,6 +108,48 @@ void oneRasterLine(void) {
 
 }
 
+inline
+void readGPIO(void) {
+	cpu.io.gpioa = GPIOA_PDIR;
+	cpu.io.gpiob = GPIOB_PDIR;
+	cpu.io.gpioc = GPIOC_PDIR;
+	cpu.io.gpiod = GPIOD_PDIR;
+	cpu.io.gpioe = GPIOE_PDIR;
+	DAC0_DAT0L = cpu.io.dac0;
+	//DAC1_DAT0L = cpu.io.dac1;
+}
+
+#if 0 && VGA // TODO....
+volatile uint16_t rasterLineCounterVGA = -1;
+
+void oneRasterLineVGA(void) {
+
+	uint16_t c = rasterLineCounterVGA;
+    c++;
+
+	if (c > 51 && c < 593) {
+		USBHS_USBCMD |= ( USBHS_USBCMD_PSE);
+		readGPIO();
+		USBHS_USBCMD &= ~(USBHS_USBCMD_PSE );
+	}
+	else {
+		if (c == 51) USBHS_USBCMD &= ~(USBHS_USBCMD_PSE );
+		else if (c == 593) USBHS_USBCMD |= ( USBHS_USBCMD_PSE);
+		else if (c == modeline.vtotal) {c = -1;}
+		readGPIO();
+	}
+
+
+	rasterLineCounterVGA = c;
+/*
+	USBHS_USBCMD |= ( USBHS_USBCMD_PSE);
+	readGPIO();
+	USBHS_USBCMD &= ~(USBHS_USBCMD_PSE );
+*/
+}
+#endif
+
+
 void initMachine() {
 
 #if F_CPU < 240000000
@@ -116,6 +158,10 @@ void initMachine() {
 
 #if !VGA && F_BUS < 120000000
 #error Teensy64: Please select F_BUS=120MHz
+#endif
+
+#if VGA && !( defined(USB_RAWHID) || defined(USB_DISABLED) )
+#error Teensy64: Please select USB Type "Raw HID"
 #endif
 
   unsigned long m = millis();
@@ -133,8 +179,8 @@ void initMachine() {
   GPIOE_PSOR = (1<<6); // turn on USB host power for VGA Board
 
   pinMode(PIN_RESET, OUTPUT_OPENDRAIN);
-  digitalWriteFast(PIN_RESET, 1);	
-  
+  digitalWriteFast(PIN_RESET, 1);
+
 #if !VGA
   pinMode(TFT_TOUCH_CS, OUTPUT);
   digitalWriteFast(TFT_TOUCH_CS, 1);
@@ -150,18 +196,19 @@ void initMachine() {
   myusb.begin();
 #endif
 
-#if VGA==1
+#if VGA
 
   uvga.set_static_framebuffer(VGA_frame_buffer);
   uvga.begin(&modeline);
-
-  uvga.clear(0);
+  uvga.clear(0x00);
  // for (int i =0; i<299;i++) memset(VGA_frame_buffer + i*464, palette[14], 452-(37));
 
 #else
+
   tft.begin();
   tft.writeScreen((uint16_t*)logo_320x240);
   tft.refresh();
+
 #endif
 
   SDinitialized = SD.begin();
@@ -170,13 +217,13 @@ void initMachine() {
   audioSampleFreq = setAudioSampleFreq(AUDIOSAMPLERATE);
   playSID.setSampleParameters((int) CLOCKSPEED, audioSampleFreq);
 
-  LED_OFF;
-
   delay(250);
 
   while (!Serial && ((millis () - m) <= 1500)) {
     ;
   }
+
+  LED_OFF;
 
   Serial.println("=============================\n");
   Serial.println("Teensy64 " __DATE__ " " __TIME__ "\n");
@@ -240,10 +287,16 @@ void initMachine() {
 
   attachInterrupt(digitalPinToInterrupt(PIN_RESET), resetMachine, RISING);
 
-#if USBHOST
-  Serial.println("USB-HOST: Disabling Async transfers now.");
-  usbHostSetAsyncTransfers(false);
+#if VGA && USBHOST
+  Serial.println("USB-HOST: Disabling Async transfers.");
+  usbHostEnableAsyncTransfers(false);
 #endif
+
+#if 0 && VGA
+  uvga.waitSync();
+  attachInterrupt(digitalPinToInterrupt(22), oneRasterLineVGA , FALLING);
+#endif
+
 
   listInterrupts();
 }

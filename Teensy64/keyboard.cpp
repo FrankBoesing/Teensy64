@@ -41,7 +41,7 @@
 #include "usb_USBHost.h"
 
 USBHost myusb;
-USBHub hub1, hub2, hub3;
+//USBHub hub1, hub2, hub3;
 KeyboardController keyboard;
 
 #endif
@@ -239,7 +239,7 @@ uint8_t cia1PORTA(void) {
   uint8_t v;
 
   v = ~cpu.cia1.R[0x02] | (cpu.cia1.R[0x00] & cpu.cia1.R[0x02]);
-
+  
   if ( digitalReadFast(PIN_JOY2_1) == 0 ) v &= 0xFE;
   if ( digitalReadFast(PIN_JOY2_2) == 0 ) v &= 0xFD;
   if ( digitalReadFast(PIN_JOY2_3) == 0 ) v &= 0xFB;
@@ -283,6 +283,7 @@ uint8_t cia1PORTB(void) {
   if ( digitalReadFast(PIN_JOY1_3) == 0 ) v &= 0xFB;
   if ( digitalReadFast(PIN_JOY1_4) == 0 ) v &= 0xF7;
   if ( digitalReadFast(PIN_JOY1_BTN) == 0 ) v &= 0xEF;
+
 
   if (!kbdData.kv) return v; //Keine Taste gedrückt
 
