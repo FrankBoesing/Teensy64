@@ -197,7 +197,7 @@ void USBHost::isr()
 	USBHS_USBSTS = stat; // clear pending interrupts
 	//stat &= USBHS_USBINTR; // mask away unwanted interrupts
 
-#if 0 
+#if 0
 	println();
 	println("ISR: ", stat, HEX);
 	//if (stat & USBHS_USBSTS_UI)  println(" USB Interrupt");
@@ -218,7 +218,7 @@ void USBHost::isr()
 	if (stat & USBHS_USBSTS_UPI) println(" USB Periodic");
 	if (stat & USBHS_USBSTS_TI0) println(" Timer0");
 	if (stat & USBHS_USBSTS_TI1) println(" Timer1");
-#endif 
+#endif
 
 	if (stat & USBHS_USBSTS_UAI) { // completed qTD(s) from the async schedule
 		println("Async Followup");
@@ -239,7 +239,7 @@ void USBHost::isr()
 		//print(async_followup_first, async_followup_last);
 	}
 	if (stat & USBHS_USBSTS_UPI) { // completed qTD(s) from the periodic schedule
-#if 0	
+#if 0
 		println("Periodic Followup");
 #endif
 		Transfer_t *p = periodic_followup_first;
@@ -368,7 +368,7 @@ Pipe_t * USBHost::new_Pipe(Device_t *dev, uint32_t type, uint32_t endpoint,
 	if (type == 3) {
 		// interrupt transfers require bandwidth & microframe scheduling
 	        if (interval > PERIODIC_LIST_SIZE*8) interval = PERIODIC_LIST_SIZE*8;
-		if (dev->speed < 2 && interval < 8) interval = 8;
+		if (dev->speed < 2 && interval < 2) interval = 8;
 		if (!allocate_interrupt_pipe_bandwidth(dev->speed,
 		    maxlen, interval, direction, &offset, &smask, &cmask)) {
 			free_Transfer(halt);

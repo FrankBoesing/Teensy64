@@ -2586,7 +2586,7 @@ static const uint8_t cyclesTable[256] =
 	2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 5, 5, 7, 7   // $F0
 };
 
-static const uint8_t writeCycleTable[256] = 
+static const uint8_t writeCycleTable[256] =
 {
     3, 0, 0, 2, 0, 0, 2, 2, 1, 0, 0, 0, 0, 0, 2, 2, // $00
     0, 0, 0, 2, 0, 0, 2, 2, 0, 0, 0, 2, 0, 0, 2, 2, // $10
@@ -2697,7 +2697,7 @@ void cpu_setExactTiming() {
 		LED_ON;
 		setAudioOff();
 		vic_displaySimpleModeScreen();
-		
+
 	}
 	cpu.exactTiming = 1;
 	cpu.exactTimingStartTime = ARM_DWT_CYCCNT;
@@ -2707,7 +2707,7 @@ void cpu_setExactTiming() {
 void cpu_disableExactTiming() {
     cpu.exactTiming = 0;
     setAudioOn();
-    LED_OFF;	
+    LED_OFF;
 }
 
 void cpu_reset() {

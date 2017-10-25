@@ -63,10 +63,15 @@ extern AudioPlaySID  playSID;
 
 #define BASE_STACK     0x100
 
+struct tio {
+	uint32_t gpioa, gpiob, gpioc, gpiod, gpioe;
+	uint16_t dac0, dac1;
+};
+
 struct tcpu {
   uint32_t exactTimingStartTime;
   uint8_t exactTiming;
-	
+
   //6502 CPU registers
   uint8_t sp, a, x, y, cpustatus;
   uint8_t penaltyop, penaltyaddr;
@@ -79,13 +84,17 @@ struct tcpu {
 
   uint16_t lineCyclesAbs; //for debug
   unsigned ticks;
-  unsigned lineCycles;  
+  unsigned lineCycles;
   unsigned long lineStartTime;
 
   r_rarr_ptr_t plamap_r; //Memory-Mapping read
   w_rarr_ptr_t plamap_w; //Memory-Mapping write
   uint8_t _exrom:1, _game:1;
   uint8_t nmiLine;
+
+#if PORTREAD_USE_RAM
+  tio io;
+#endif
 
   tvic vic;
   tcia cia1;
@@ -97,8 +106,8 @@ struct tcpu {
 	uint32_t RAM32[RAMSIZE/4];
   };
 
-  
-  
+
+
   uint8_t cartrigeLO[1]; //TODO
   uint8_t cartrigeHI[1]; //TODO
 
@@ -114,4 +123,252 @@ void cpu_setExactTiming();
 void cpu_disableExactTiming();
 
 void cia_clockt(int ticks);
+
+
+
+#define CORE_PIN0_PORT	cpu.io.gpiob
+#define CORE_PIN1_PORT	cpu.io.gpiob
+#define CORE_PIN2_PORT	cpu.io.gpiod
+#define CORE_PIN3_PORT	cpu.io.gpioa
+#define CORE_PIN4_PORT	cpu.io.gpioa
+#define CORE_PIN5_PORT	cpu.io.gpiod
+#define CORE_PIN6_PORT	cpu.io.gpiod
+#define CORE_PIN7_PORT	cpu.io.gpiod
+#define CORE_PIN8_PORT	cpu.io.gpiod
+#define CORE_PIN9_PORT	cpu.io.gpioc
+#define CORE_PIN10_PORT	cpu.io.gpioc
+#define CORE_PIN11_PORT	cpu.io.gpioc
+#define CORE_PIN12_PORT	cpu.io.gpioc
+#define CORE_PIN13_PORT	cpu.io.gpioc
+#define CORE_PIN14_PORT	cpu.io.gpiod
+#define CORE_PIN15_PORT	cpu.io.gpioc
+#define CORE_PIN16_PORT	cpu.io.gpiob
+#define CORE_PIN17_PORT	cpu.io.gpiob
+#define CORE_PIN18_PORT	cpu.io.gpiob
+#define CORE_PIN19_PORT	cpu.io.gpiob
+#define CORE_PIN20_PORT	cpu.io.gpiod
+#define CORE_PIN21_PORT	cpu.io.gpiod
+#define CORE_PIN22_PORT	cpu.io.gpioc
+#define CORE_PIN23_PORT	cpu.io.gpioc
+#define CORE_PIN24_PORT	cpu.io.gpioe
+#define CORE_PIN25_PORT	cpu.io.gpioa
+#define CORE_PIN26_PORT	cpu.io.gpioa
+#define CORE_PIN27_PORT	cpu.io.gpioa
+#define CORE_PIN28_PORT	cpu.io.gpioa
+#define CORE_PIN29_PORT	cpu.io.gpiob
+#define CORE_PIN30_PORT	cpu.io.gpiob
+#define CORE_PIN31_PORT	cpu.io.gpiob
+#define CORE_PIN32_PORT	cpu.io.gpiob
+#define CORE_PIN33_PORT	cpu.io.gpioe
+#define CORE_PIN34_PORT	cpu.io.gpioe
+#define CORE_PIN35_PORT	cpu.io.gpioc
+#define CORE_PIN36_PORT	cpu.io.gpioc
+#define CORE_PIN37_PORT	cpu.io.gpioc
+#define CORE_PIN38_PORT	cpu.io.gpioc
+#define CORE_PIN39_PORT	cpu.io.gpioa
+#define CORE_PIN40_PORT	cpu.io.gpioa
+#define CORE_PIN41_PORT	cpu.io.gpioa
+#define CORE_PIN42_PORT	cpu.io.gpioa
+#define CORE_PIN43_PORT	cpu.io.gpiob
+#define CORE_PIN44_PORT	cpu.io.gpiob
+#define CORE_PIN45_PORT	cpu.io.gpiob
+#define CORE_PIN46_PORT	cpu.io.gpiob
+#define CORE_PIN47_PORT	cpu.io.gpiod
+#define CORE_PIN48_PORT	cpu.io.gpiod
+#define CORE_PIN49_PORT	cpu.io.gpiob
+#define CORE_PIN50_PORT	cpu.io.gpiob
+#define CORE_PIN51_PORT	cpu.io.gpiod
+#define CORE_PIN52_PORT	cpu.io.gpiod
+#define CORE_PIN53_PORT	cpu.io.gpiod
+#define CORE_PIN54_PORT	cpu.io.gpiod
+#define CORE_PIN55_PORT	cpu.io.gpiod
+#define CORE_PIN56_PORT	cpu.io.gpioe
+#define CORE_PIN57_PORT	cpu.io.gpioe
+#define CORE_PIN58_PORT	cpu.io.gpioe
+#define CORE_PIN59_PORT	cpu.io.gpioe
+#define CORE_PIN60_PORT	cpu.io.gpioe
+#define CORE_PIN61_PORT	cpu.io.gpioe
+#define CORE_PIN62_PORT	cpu.io.gpioe
+#define CORE_PIN63_PORT	cpu.io.gpioe
+
+// General-Purpose Input/Output (GPIO)
+struct KINETIS_GPIO_t {
+	volatile uint32_t PDOR;
+	volatile uint32_t PSOR;
+	volatile uint32_t PCOR;
+	volatile uint32_t PTOR;
+	volatile uint32_t PDIR;
+	volatile uint32_t PDDR;
+	volatile uint32_t unused[10];
+} ;
+
+typedef struct {
+	struct KINETIS_GPIO_t A;
+	struct KINETIS_GPIO_t B;
+	struct KINETIS_GPIO_t C;
+	struct KINETIS_GPIO_t D;
+	struct KINETIS_GPIO_t E;
+} KINETIS_GPIOS_t;
+
+#define KINETIS_GPIO		(*(KINETIS_GPIOS_t *)0x400FF000)
+
+#if PORTREAD_USE_RAM
+#define READGPIO {\
+	cpu.io.gpioa = KINETIS_GPIO.A.PDIR;\
+	cpu.io.gpiob = KINETIS_GPIO.B.PDIR;\
+	cpu.io.gpioc = KINETIS_GPIO.C.PDIR;\
+	cpu.io.gpiod = KINETIS_GPIO.D.PDIR;\
+	cpu.io.gpioe = KINETIS_GPIO.E.PDIR;\
+	/*DAC0_DAT0L = cpu.io.dac0;*/\
+	/*DAC1_DAT0L = cpu.io.dac1;*/\
+}
+#else
+#define READGPIO
+#endif
+
+static inline uint8_t gpioRead(uint8_t pin) __attribute__((always_inline, unused));
+static inline uint8_t gpioRead(uint8_t pin)
+{
+#if PORTREAD_USE_RAM
+	if (__builtin_constant_p(pin)) {
+		if (pin == 0) {
+			return (CORE_PIN0_PORT & CORE_PIN0_BITMASK) ? 1 : 0;
+		} else if (pin == 1) {
+			return (CORE_PIN1_PORT & CORE_PIN1_BITMASK) ? 1 : 0;
+		} else if (pin == 2) {
+			return (CORE_PIN2_PORT & CORE_PIN2_BITMASK) ? 1 : 0;
+		} else if (pin == 3) {
+			return (CORE_PIN3_PORT & CORE_PIN3_BITMASK) ? 1 : 0;
+		} else if (pin == 4) {
+			return (CORE_PIN4_PORT & CORE_PIN4_BITMASK) ? 1 : 0;
+		} else if (pin == 5) {
+			return (CORE_PIN5_PORT & CORE_PIN5_BITMASK) ? 1 : 0;
+		} else if (pin == 6) {
+			return (CORE_PIN6_PORT & CORE_PIN6_BITMASK) ? 1 : 0;
+		} else if (pin == 7) {
+			return (CORE_PIN7_PORT & CORE_PIN7_BITMASK) ? 1 : 0;
+		} else if (pin == 8) {
+			return (CORE_PIN8_PORT & CORE_PIN8_BITMASK) ? 1 : 0;
+		} else if (pin == 9) {
+			return (CORE_PIN9_PORT & CORE_PIN9_BITMASK) ? 1 : 0;
+		} else if (pin == 10) {
+			return (CORE_PIN10_PORT & CORE_PIN10_BITMASK) ? 1 : 0;
+		} else if (pin == 11) {
+			return (CORE_PIN11_PORT & CORE_PIN11_BITMASK) ? 1 : 0;
+		} else if (pin == 12) {
+			return (CORE_PIN12_PORT & CORE_PIN12_BITMASK) ? 1 : 0;
+		} else if (pin == 13) {
+			return (CORE_PIN13_PORT & CORE_PIN13_BITMASK) ? 1 : 0;
+		} else if (pin == 14) {
+			return (CORE_PIN14_PORT & CORE_PIN14_BITMASK) ? 1 : 0;
+		} else if (pin == 15) {
+			return (CORE_PIN15_PORT & CORE_PIN15_BITMASK) ? 1 : 0;
+		} else if (pin == 16) {
+			return (CORE_PIN16_PORT & CORE_PIN16_BITMASK) ? 1 : 0;
+		} else if (pin == 17) {
+			return (CORE_PIN17_PORT & CORE_PIN17_BITMASK) ? 1 : 0;
+		} else if (pin == 18) {
+			return (CORE_PIN18_PORT & CORE_PIN18_BITMASK) ? 1 : 0;
+		} else if (pin == 19) {
+			return (CORE_PIN19_PORT & CORE_PIN19_BITMASK) ? 1 : 0;
+		} else if (pin == 20) {
+			return (CORE_PIN20_PORT & CORE_PIN20_BITMASK) ? 1 : 0;
+		} else if (pin == 21) {
+			return (CORE_PIN21_PORT & CORE_PIN21_BITMASK) ? 1 : 0;
+		} else if (pin == 22) {
+			return (CORE_PIN22_PORT & CORE_PIN22_BITMASK) ? 1 : 0;
+		} else if (pin == 23) {
+			return (CORE_PIN23_PORT & CORE_PIN23_BITMASK) ? 1 : 0;
+		} else if (pin == 24) {
+			return (CORE_PIN24_PORT & CORE_PIN24_BITMASK) ? 1 : 0;
+		} else if (pin == 25) {
+			return (CORE_PIN25_PORT & CORE_PIN25_BITMASK) ? 1 : 0;
+		} else if (pin == 26) {
+			return (CORE_PIN26_PORT & CORE_PIN26_BITMASK) ? 1 : 0;
+		} else if (pin == 27) {
+			return (CORE_PIN27_PORT & CORE_PIN27_BITMASK) ? 1 : 0;
+		} else if (pin == 28) {
+			return (CORE_PIN28_PORT & CORE_PIN28_BITMASK) ? 1 : 0;
+		} else if (pin == 29) {
+			return (CORE_PIN29_PORT & CORE_PIN29_BITMASK) ? 1 : 0;
+		} else if (pin == 30) {
+			return (CORE_PIN30_PORT & CORE_PIN30_BITMASK) ? 1 : 0;
+		} else if (pin == 31) {
+			return (CORE_PIN31_PORT & CORE_PIN31_BITMASK) ? 1 : 0;
+		} else if (pin == 32) {
+			return (CORE_PIN32_PORT & CORE_PIN32_BITMASK) ? 1 : 0;
+		} else if (pin == 33) {
+			return (CORE_PIN33_PORT & CORE_PIN33_BITMASK) ? 1 : 0;
+		} else if (pin == 34) {
+			return (CORE_PIN34_PORT & CORE_PIN34_BITMASK) ? 1 : 0;
+		} else if (pin == 35) {
+			return (CORE_PIN35_PORT & CORE_PIN35_BITMASK) ? 1 : 0;
+		} else if (pin == 36) {
+			return (CORE_PIN36_PORT & CORE_PIN36_BITMASK) ? 1 : 0;
+		} else if (pin == 37) {
+			return (CORE_PIN37_PORT & CORE_PIN37_BITMASK) ? 1 : 0;
+		} else if (pin == 38) {
+			return (CORE_PIN38_PORT & CORE_PIN38_BITMASK) ? 1 : 0;
+		} else if (pin == 39) {
+			return (CORE_PIN39_PORT & CORE_PIN39_BITMASK) ? 1 : 0;
+		} else if (pin == 40) {
+			return (CORE_PIN40_PORT & CORE_PIN40_BITMASK) ? 1 : 0;
+		} else if (pin == 41) {
+			return (CORE_PIN41_PORT & CORE_PIN41_BITMASK) ? 1 : 0;
+		} else if (pin == 42) {
+			return (CORE_PIN42_PORT & CORE_PIN42_BITMASK) ? 1 : 0;
+		} else if (pin == 43) {
+			return (CORE_PIN43_PORT & CORE_PIN43_BITMASK) ? 1 : 0;
+		} else if (pin == 44) {
+			return (CORE_PIN44_PORT & CORE_PIN44_BITMASK) ? 1 : 0;
+		} else if (pin == 45) {
+			return (CORE_PIN45_PORT & CORE_PIN45_BITMASK) ? 1 : 0;
+		} else if (pin == 46) {
+			return (CORE_PIN46_PORT & CORE_PIN46_BITMASK) ? 1 : 0;
+		} else if (pin == 47) {
+			return (CORE_PIN47_PORT & CORE_PIN47_BITMASK) ? 1 : 0;
+		} else if (pin == 48) {
+			return (CORE_PIN48_PORT & CORE_PIN48_BITMASK) ? 1 : 0;
+		} else if (pin == 49) {
+			return (CORE_PIN49_PORT & CORE_PIN49_BITMASK) ? 1 : 0;
+		} else if (pin == 50) {
+			return (CORE_PIN50_PORT & CORE_PIN50_BITMASK) ? 1 : 0;
+		} else if (pin == 51) {
+			return (CORE_PIN51_PORT & CORE_PIN51_BITMASK) ? 1 : 0;
+		} else if (pin == 52) {
+			return (CORE_PIN52_PORT & CORE_PIN52_BITMASK) ? 1 : 0;
+		} else if (pin == 53) {
+			return (CORE_PIN53_PORT & CORE_PIN53_BITMASK) ? 1 : 0;
+		} else if (pin == 54) {
+			return (CORE_PIN54_PORT & CORE_PIN54_BITMASK) ? 1 : 0;
+		} else if (pin == 55) {
+			return (CORE_PIN55_PORT & CORE_PIN55_BITMASK) ? 1 : 0;
+		} else if (pin == 56) {
+			return (CORE_PIN56_PORT & CORE_PIN56_BITMASK) ? 1 : 0;
+		} else if (pin == 57) {
+			return (CORE_PIN57_PORT & CORE_PIN57_BITMASK) ? 1 : 0;
+		} else if (pin == 58) {
+			return (CORE_PIN58_PORT & CORE_PIN58_BITMASK) ? 1 : 0;
+		} else if (pin == 59) {
+			return (CORE_PIN59_PORT & CORE_PIN59_BITMASK) ? 1 : 0;
+		} else if (pin == 60) {
+			return (CORE_PIN60_PORT & CORE_PIN60_BITMASK) ? 1 : 0;
+		} else if (pin == 61) {
+			return (CORE_PIN61_PORT & CORE_PIN61_BITMASK) ? 1 : 0;
+		} else if (pin == 62) {
+			return (CORE_PIN62_PORT & CORE_PIN62_BITMASK) ? 1 : 0;
+		} else if (pin == 63) {
+			return (CORE_PIN63_PORT & CORE_PIN63_BITMASK) ? 1 : 0;
+		} else {
+			return 0;
+		}
+	} else {
+		Serial.println("Pin# not constant");
+		return 0;
+	}
+#else
+	return digitalReadFast(pin);
+#endif
+}
+
 #endif

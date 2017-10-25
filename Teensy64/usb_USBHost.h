@@ -305,7 +305,7 @@ class KeyboardController : public USBDriver {
 public:
 	KeyboardController();
 	void    attachC64(void (*keyboardmatrix)(void *keys)) {keyboardmatrixFunction = keyboardmatrix;};//FB
-	
+
 	int     available();
 	int     read();
 	uint8_t getKey();
@@ -315,7 +315,7 @@ public:
 	void    attachRelease(void (*keyReleased)());
 	void	 LEDS(uint8_t leds);
 	uint8_t  LEDS() {return leds_.byte;}
-	void	updateLEDS(void);	
+	void	updateLEDS(void);
 protected:
 	virtual bool claim(Device_t *device, int type, const uint8_t *descriptors, uint32_t len);
 	virtual void disconnect();
@@ -328,7 +328,7 @@ private:
 	void (*keyReleasedFunction)();
 	Pipe_t *datapipe;
 	uint8_t report[8];
-	KBDLeds_t leds_ = {0}; 	
+	KBDLeds_t leds_ = {0};
 };
 
 

@@ -239,12 +239,12 @@ uint8_t cia1PORTA(void) {
   uint8_t v;
 
   v = ~cpu.cia1.R[0x02] | (cpu.cia1.R[0x00] & cpu.cia1.R[0x02]);
-  
-  if ( digitalReadFast(PIN_JOY2_1) == 0 ) v &= 0xFE;
-  if ( digitalReadFast(PIN_JOY2_2) == 0 ) v &= 0xFD;
-  if ( digitalReadFast(PIN_JOY2_3) == 0 ) v &= 0xFB;
-  if ( digitalReadFast(PIN_JOY2_4) == 0 ) v &= 0xF7;
-  if ( digitalReadFast(PIN_JOY2_BTN) == 0 ) v &= 0xEF;
+
+  if ( gpioRead(PIN_JOY2_1) == 0 ) v &= 0xFE;
+  if ( gpioRead(PIN_JOY2_2) == 0 ) v &= 0xFD;
+  if ( gpioRead(PIN_JOY2_3) == 0 ) v &= 0xFB;
+  if ( gpioRead(PIN_JOY2_4) == 0 ) v &= 0xF7;
+  if ( gpioRead(PIN_JOY2_BTN) == 0 ) v &= 0xEF;
 
   if (!kbdData.kv) return v; //Keine Taste gedrückt
 
@@ -278,11 +278,11 @@ uint8_t cia1PORTB(void) {
 
   v = ~cpu.cia1.R[0x03] | (cpu.cia1.R[0x00] & cpu.cia1.R[0x02]) ;
 
-  if ( digitalReadFast(PIN_JOY1_1) == 0 ) v &= 0xFE;
-  if ( digitalReadFast(PIN_JOY1_2) == 0 ) v &= 0xFD;
-  if ( digitalReadFast(PIN_JOY1_3) == 0 ) v &= 0xFB;
-  if ( digitalReadFast(PIN_JOY1_4) == 0 ) v &= 0xF7;
-  if ( digitalReadFast(PIN_JOY1_BTN) == 0 ) v &= 0xEF;
+  if ( gpioRead(PIN_JOY1_1) == 0 ) v &= 0xFE;
+  if ( gpioRead(PIN_JOY1_2) == 0 ) v &= 0xFD;
+  if ( gpioRead(PIN_JOY1_3) == 0 ) v &= 0xFB;
+  if ( gpioRead(PIN_JOY1_4) == 0 ) v &= 0xF7;
+  if ( gpioRead(PIN_JOY1_BTN) == 0 ) v &= 0xEF;
 
 
   if (!kbdData.kv) return v; //Keine Taste gedrückt
@@ -484,7 +484,7 @@ void Ps2Interrupt(void)
           kbdData.shiftLock = ~kbdData.shiftLock;
         } else {
 
-		 		  
+
           switch (s) {
             case 0x71 : if (state == PS2CTRL | PS2ALT) {
                 resetMachine();
@@ -507,9 +507,9 @@ void Ps2Interrupt(void)
             case 0x0C : s = 0x04; kbdData.ke |= 0x02; break;// F4 => SHIFT + F3
             case 0x0B : s = 0x03; kbdData.ke |= 0x02; break;// F6 => SHIFT + F5
             case 0x0A : s = 0x83; kbdData.ke |= 0x02; break;// F8 => SHIFT + F7
-			
+
           }
-		 
+
           if (s) {
 			  if (!hotkey(s)) kbdData.k = s;
 		  }

@@ -34,6 +34,7 @@
 */
 
 #include <Arduino.h>
+#include <core_pins.h>
 #include "Teensy64.h"
 
 
@@ -92,6 +93,10 @@ void oneRasterLine(void) {
 		vic_do_simple();
 	}
 
+#if PORTREAD_USE_RAM
+	READGPIO;
+#endif
+
     if (--lc == 0) {
       lc = LINEFREQ / 10; // 10Hz
       cia1_checkRTCAlarm();
@@ -108,47 +113,74 @@ void oneRasterLine(void) {
 
 }
 
-inline
-void readGPIO(void) {
-	cpu.io.gpioa = GPIOA_PDIR;
-	cpu.io.gpiob = GPIOB_PDIR;
-	cpu.io.gpioc = GPIOC_PDIR;
-	cpu.io.gpiod = GPIOD_PDIR;
-	cpu.io.gpioe = GPIOE_PDIR;
-	DAC0_DAT0L = cpu.io.dac0;
-	//DAC1_DAT0L = cpu.io.dac1;
+
+
+
+/*
+	The USB HOST feature causes pixel-flicker on VGA, because it with GPIO on the same periphal bus.
+	These functions sync to the HSYNC-Signal, and enable USB on the right edge of the screen only.
+	In addition, all GPIOs are read.
+*/
+#if VGA && USBHOST
+volatile int16_t rasterLineCounterVGA;
+FASTRUN void ftm0_isr(void) {
+
+	int16_t c = rasterLineCounterVGA;
+	uint32_t i1 = FTM0_C2SC;
+	if (i1 & FTM_CSC_CHF) {
+		FTM0_C2SC = i1 & ~FTM_CSC_CHF;
+		USBHS_USBCMD |= ( USBHS_USBCMD_PSE /* | USBHS_USBCMD_ASE */); //Enable USB Host Periodic Transfers
+		READGPIO;
+		c++;
+		if (c == modeline.vtotal) {c = 0;}
+		rasterLineCounterVGA = c;
+//		digitalWriteFast(13,0);
+	} else {
+		uint32_t i2 = FTM0_C3SC;
+		FTM0_C3SC = i2 & ~FTM_CSC_CHF;
+	//	if (c > 51 && c < 593) USBHS_USBCMD &= ~(USBHS_USBCMD_PSE /* | USBHS_USBCMD_ASE */);//Disable USB Host Periodic Transfers
+//  	digitalWriteFast(13,1);
+	}
 }
 
-#if 0 && VGA // TODO....
-volatile uint16_t rasterLineCounterVGA = -1;
+void add_uVGAhsync(void) {
+  Serial.println("USB-HOST: Disabling Async transfers.");
+  USBHS_USBCMD &= ~(USBHS_USBCMD_ASE);//Disable USB Host Async Transfers
 
-void oneRasterLineVGA(void) {
+  Serial.println("uVGA: Add hSync interrupt.");
+  // Add channels 2 + 3 to FTM 0 as triggers for FTM0 interrupt
+  //stop FTM0
+  uint32_t sc = FTM0_SC;
+  FTM0_SC = 0;
+#if 0
+  Serial.print("FTM 0 Channel 0 SC: 0x");
+  Serial.println(FTM0_C0SC, HEX);
+  Serial.print("FTM 0 Channel 0 V:");
+  Serial.println(FTM0_C0V);
+  Serial.print("FTM 0 Channel 1 SC: 0x");
+  Serial.println(FTM0_C1SC, HEX);
+  Serial.print("FTM 0 Channel 1 V:");
+  Serial.println(FTM0_C1V);
+#endif
+  //Add channels 2+3
+  FTM0_C2SC = FTM0_C0SC | FTM_CSC_CHIE;
+  FTM0_C2V = FTM0_C0V - 260; //Value determined experimentally
+  FTM0_C3SC = FTM0_C1SC | FTM_CSC_CHIE;
+  FTM0_C3V = FTM0_C1V + 150; //Value determined experimentally
+  const uint32_t channel_shift = (2 >> 1) << 3;	// combine bits is at position (channel pair number (=channel number /2) * 8)
+  FTM0_COMBINE |= ((FTM0_COMBINE & ~(0x000000FF << channel_shift)) | ((FTM_COMBINE_COMBINE0 | FTM_COMBINE_COMP0) << channel_shift));
 
-	uint16_t c = rasterLineCounterVGA;
-    c++;
+  // re-start FTM0
+  FTM0_SC = sc;
 
-	if (c > 51 && c < 593) {
-		USBHS_USBCMD |= ( USBHS_USBCMD_PSE);
-		readGPIO();
-		USBHS_USBCMD &= ~(USBHS_USBCMD_PSE );
-	}
-	else {
-		if (c == 51) USBHS_USBCMD &= ~(USBHS_USBCMD_PSE );
-		else if (c == 593) USBHS_USBCMD |= ( USBHS_USBCMD_PSE);
-		else if (c == modeline.vtotal) {c = -1;}
-		readGPIO();
-	}
-
-
-	rasterLineCounterVGA = c;
-/*
-	USBHS_USBCMD |= ( USBHS_USBCMD_PSE);
-	readGPIO();
-	USBHS_USBCMD &= ~(USBHS_USBCMD_PSE );
-*/
+  noInterrupts();
+  NVIC_SET_PRIORITY(IRQ_FTM0, 0);
+  NVIC_ENABLE_IRQ(IRQ_FTM0);
+  uvga.waitSync();
+  rasterLineCounterVGA = 0;
+  interrupts();
 }
 #endif
-
 
 void initMachine() {
 
@@ -191,7 +223,7 @@ void initMachine() {
   disableEventResponder();
 
   Serial.begin(9600);
-
+  Serial.println("Init");
 #if USBHOST
   myusb.begin();
 #endif
@@ -213,16 +245,16 @@ void initMachine() {
 
   SDinitialized = SD.begin();
 
-  unsigned audioSampleFreq;
-  audioSampleFreq = setAudioSampleFreq(AUDIOSAMPLERATE);
+  float audioSampleFreq;
+  audioSampleFreq = setAudioSampleFreq((VGA)?37820:AUDIOSAMPLERATE);
   playSID.setSampleParameters((int) CLOCKSPEED, audioSampleFreq);
 
-  delay(250);
+  delay(1250);
 
-  while (!Serial && ((millis () - m) <= 1500)) {
+  while (!Serial && ((millis() - m) <= 2500)) {
     ;
   }
-
+Serial.println(audioSampleFreq);
   LED_OFF;
 
   Serial.println("=============================\n");
@@ -281,22 +313,14 @@ void initMachine() {
   cpu.RAM[678] = (PAL == 1) ? 1 : 0; //PAL/NTSC switch, C64-Autodetection does not work with FASTBOOT
 #endif
 
-
   cpu.vic.lineClock.begin( oneRasterLine, LINETIMER_DEFAULT_FREQ);
   cpu.vic.lineClock.priority( ISR_PRIORITY_RASTERLINE );
 
   attachInterrupt(digitalPinToInterrupt(PIN_RESET), resetMachine, RISING);
 
 #if VGA && USBHOST
-  Serial.println("USB-HOST: Disabling Async transfers.");
-  usbHostEnableAsyncTransfers(false);
+  add_uVGAhsync();
 #endif
-
-#if 0 && VGA
-  uvga.waitSync();
-  attachInterrupt(digitalPinToInterrupt(22), oneRasterLineVGA , FALLING);
-#endif
-
 
   listInterrupts();
 }

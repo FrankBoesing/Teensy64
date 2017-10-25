@@ -59,9 +59,10 @@ bool KeyboardController::claim(Device_t *dev, int type, const uint8_t *descripto
 	if (size != 8) return false; // must be 8 bytes for Keyboard Boot Protocol
 	uint32_t interval = descriptors[24];
 	println("polling interval = ", interval);
-	datapipe = new_Pipe(dev, 3, endpoint, 1, 8, interval);
+	datapipe = new_Pipe(dev, 3, endpoint, 1, 8, 8); //<---EDIT F.B.
 	datapipe->callback_function = callback;
 	queue_Data_Transfer(datapipe, report, 8, this);
+
 	return true;
 }
 

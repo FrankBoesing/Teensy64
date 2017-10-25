@@ -1,5 +1,5 @@
 /*
-	Copyright Frank Bösing, 2017	
+	Copyright Frank Bösing, 2017
 
 	This file is part of Teensy64.
 
@@ -30,7 +30,7 @@
 
     Sie sollten eine Kopie der GNU General Public License zusammen mit diesem
     Programm erhalten haben. Wenn nicht, siehe <http://www.gnu.org/licenses/>.
-		
+
 */
 
 /* choose your "display"-type */
@@ -43,13 +43,13 @@
 #define PALETTE(r,g,b) (((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3))
 #endif
 
-#elif 0 // B&W TV for real retro feeling. Looks great.
+#elif 0 // B&W TV for real retro feeling. Looks great (ILI 9341 only)
 #define PALETTE(r,g,b) ( ((((int)( 0.299f * r + 0.587f * g + 0.114f * b )) & 0xF8) << 8 ) | \
 						( (((int) ( 0.299f * r + 0.587f * g + 0.114f * b )) & 0xFC) << 3 ) | \
 						( (((int) ( 0.299f * r + 0.587f * g + 0.114f * b )) & 0xFF) >> 3 ))
 
 
-#elif 0 // green display
+#elif 0 // green display (ILI 9341 only)
 #define PALETTE(r,g,b) ( ( 0 ) | \
 						( (((int) ( 0.299f * r + 0.587f * g + 0.114f * b )) & 0xFC) << 3 ) | \
 						( 0 ))
@@ -58,17 +58,11 @@
 
 
 
-/* chose one of these palettes: */
+/* chose one of these palettes:
+   VGA is 256 colors only (rrrgggbb) , subtle differences might not be visible
+*/
 
-#if 0 //TEST VGA
-static const uint16_t palette[16] = {
-	PALETTE(0x00,0x00,0x00), PALETTE(0xff,0xff,0xff), PALETTE(0x88,0x20,0x00), PALETTE(0x68,0xd0,0xa8), // black, white, red, cyan,
-	PALETTE(0xa8,0x38,0xa0), PALETTE(0x50,0xb8,0x18), PALETTE(0x18,0x10,0x80), PALETTE(0xf0,0xe8,0x58), // purple, green, blue, yellow
-	PALETTE(0xa0,0x48,0x00), PALETTE(0x47<<1,0x2b<<1,0x1b<<1), PALETTE(0xc8,0x78,0x70), PALETTE(0x48,0x48,0x48), // orange, brown, lightred, grey1,
-	PALETTE(0x80,0x80,0x80), PALETTE(0x98,0xff,0x98), PALETTE(0x50,0x90,0xd0), PALETTE(0xb8,0xb8,0xb8)  // grey2, lightgreen, lightblue, grey3
-};
-
-#elif 1 // "Deekay" (default)
+#if 1 // "Deekay" (default)
 static const uint16_t palette[16] = {
 	PALETTE(0x00,0x00,0x00), PALETTE(0xff,0xff,0xff), PALETTE(0x88,0x20,0x00), PALETTE(0x68,0xd0,0xa8), // black, white, red, cyan,
 	PALETTE(0xa8,0x38,0xa0), PALETTE(0x50,0xb8,0x18), PALETTE(0x18,0x10,0x90), PALETTE(0xf0,0xe8,0x58), // purple, green, blue, yellow

@@ -57,9 +57,9 @@ void cia2_write(uint32_t address, uint8_t value) {
       if (!(value & 0x18)) {
         cpu_setExactTiming();
       }
-		
+
 	  WRITE_ATN_CLK_DATA(value);
-	  
+
 
       cpu.vic.bank = ((~value) & 0x03) * 16384;
       vic_adrchange();
@@ -67,7 +67,7 @@ void cia2_write(uint32_t address, uint8_t value) {
 	  }
       break;
 
-    case 0x01 : 
+    case 0x01 :
 	   break;//Data PORTB
 
     case 0x04 : {
@@ -105,7 +105,7 @@ void cia2_write(uint32_t address, uint8_t value) {
           value &= 0x0f;
           cpu.cia2.TODstopped = 0;
           //Translate set Time to TOD:
-          cpu.cia2.TOD = (int)(millis() % 86400000l) - 
+          cpu.cia2.TOD = (int)(millis() % 86400000l) -
 						(value * 100 + cpu.cia2.R[0x09] * 1000l + cpu.cia2.R[0x0A] * 60000l + cpu.cia2.R[0x0B] * 3600000l);
 #if RTCDEBUG
           Serial.print("CIA 2 Set TENTH:");

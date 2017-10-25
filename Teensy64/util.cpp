@@ -53,7 +53,7 @@ void disableEventResponder(void) {
 
 
 #define PDB_CONFIG (PDB_SC_TRGSEL(15) | PDB_SC_PDBEN | PDB_SC_CONT | PDB_SC_PDBIE | PDB_SC_DMAEN)
-static unsigned int setDACFreq(unsigned int freq) {
+static float setDACFreq(float freq) {
   if (!(SIM_SCGC6 & SIM_SCGC6_PDB)) return 0;
 
   unsigned int t = (float)F_BUS / freq - 0.5f;
