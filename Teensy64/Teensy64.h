@@ -36,10 +36,7 @@
 #define Teensy64_h_
 
 #include <Arduino.h>
-#include <SdFat.h>
 #include "settings.h"
-#include "output_dac.h"
-#include <reSID.h>
 
 #define VERSION "08"
 #define NTSC (!PAL)
@@ -58,8 +55,6 @@ extern ILI9341_t3DMA tft;
 //#include <XPT2046_Touchscreen.h> //Not used
 #endif
 
-
-#include "cpu.h"
 
 #if USBHOST
 #include "usb_USBHost.h"
@@ -106,7 +101,6 @@ extern uint8_t SDinitialized;
 //#define AUDIOSAMPLERATE     ((int)CLOCKSPEED / 64)// (~15kHz)
 #define AUDIOSAMPLERATE     (LINEFREQ * 2)// (~15kHz) // TODO: Which is better (Speed/Quality)?
 
-
 #define ISR_PRIORITY_RASTERLINE   255
 
 #if !defined(PORTREAD_USE_RAM)
@@ -149,7 +143,7 @@ extern uint8_t SDinitialized;
 #define READ_CLK_DATA() \
   ((digitalReadFast(PIN_SERIAL_CLK) << 6) | \
    (digitalReadFast(PIN_SERIAL_DATA) << 7))
-   */
+  */
 #define READ_CLK_DATA() 0
 
 #else
@@ -234,4 +228,8 @@ digitalWriteFast(PIN_SERIAL_DATA, (~value & 0x20)); \ //PTA15 IEC DATA 5
 
 #endif
 
+#include <SdFat.h>
+#include "output_dac.h"
+#include <reSID.h>
+#include "cpu.h"
 #endif

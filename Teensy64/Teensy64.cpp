@@ -51,11 +51,11 @@ ILI9341_t3DMA tft = ILI9341_t3DMA(TFT_CS, TFT_DC, TFT_RST, TFT_MOSI, TFT_SCLK, T
 
 #include "vic_palette.h"
 
-#if 1
+
 AudioPlaySID        playSID;  //xy=105,306
 AudioOutputAnalog   audioout; //xy=476,333
 AudioConnection     patchCord1(playSID, 0 , audioout, 0);
-#endif
+
 
 SdFatSdio SD;
 uint8_t SDinitialized = 0;
@@ -93,7 +93,7 @@ void oneRasterLine(void) {
 		vic_do_simple();
 	}
 
-#if PORTREAD_USE_RAM
+#if !VGA 
 	READGPIO;
 #endif
 
@@ -138,19 +138,22 @@ FASTRUN void ftm0_isr(void) {
 	} else {
 		uint32_t i2 = FTM0_C3SC;
 		FTM0_C3SC = i2 & ~FTM_CSC_CHF;
-	//	if (c > 51 && c < 593) USBHS_USBCMD &= ~(USBHS_USBCMD_PSE /* | USBHS_USBCMD_ASE */);//Disable USB Host Periodic Transfers
+		if (c > 51 && c < 593) USBHS_USBCMD &= ~(USBHS_USBCMD_PSE /* | USBHS_USBCMD_ASE */);//Disable USB Host Periodic Transfers
 //  	digitalWriteFast(13,1);
 	}
+	
 }
 
 void add_uVGAhsync(void) {
   Serial.println("USB-HOST: Disabling Async transfers.");
   USBHS_USBCMD &= ~(USBHS_USBCMD_ASE);//Disable USB Host Async Transfers
-
+  
   Serial.println("uVGA: Add hSync interrupt.");
+
   // Add channels 2 + 3 to FTM 0 as triggers for FTM0 interrupt
   //stop FTM0
   uint32_t sc = FTM0_SC;
+  
   FTM0_SC = 0;
 #if 0
   Serial.print("FTM 0 Channel 0 SC: 0x");
@@ -162,11 +165,12 @@ void add_uVGAhsync(void) {
   Serial.print("FTM 0 Channel 1 V:");
   Serial.println(FTM0_C1V);
 #endif
+
   //Add channels 2+3
   FTM0_C2SC = FTM0_C0SC | FTM_CSC_CHIE;
   FTM0_C2V = FTM0_C0V - 260; //Value determined experimentally
   FTM0_C3SC = FTM0_C1SC | FTM_CSC_CHIE;
-  FTM0_C3V = FTM0_C1V + 150; //Value determined experimentally
+  FTM0_C3V = FTM0_C1V + 145; //Value determined experimentally
   const uint32_t channel_shift = (2 >> 1) << 3;	// combine bits is at position (channel pair number (=channel number /2) * 8)
   FTM0_COMBINE |= ((FTM0_COMBINE & ~(0x000000FF << channel_shift)) | ((FTM_COMBINE_COMBINE0 | FTM_COMBINE_COMP0) << channel_shift));
 
@@ -179,6 +183,8 @@ void add_uVGAhsync(void) {
   uvga.waitSync();
   rasterLineCounterVGA = 0;
   interrupts();
+
+  Serial.print("Done.");
 }
 #endif
 
@@ -193,7 +199,7 @@ void initMachine() {
 #endif
 
 #if VGA && !( defined(USB_RAWHID) || defined(USB_DISABLED) )
-#error Teensy64: Please select USB Type "Raw HID"
+#pragma message "Teensy64: Please select USB Type Raw HID"
 #endif
 
   unsigned long m = millis();
@@ -232,7 +238,7 @@ void initMachine() {
 
   uvga.set_static_framebuffer(VGA_frame_buffer);
   uvga.begin(&modeline);
-  uvga.clear(0x00);
+  uvga.clear(0xff);
  // for (int i =0; i<299;i++) memset(VGA_frame_buffer + i*464, palette[14], 452-(37));
 
 #else
@@ -245,16 +251,16 @@ void initMachine() {
 
   SDinitialized = SD.begin();
 
-  float audioSampleFreq;
-  audioSampleFreq = setAudioSampleFreq((VGA)?37820:AUDIOSAMPLERATE);
+  unsigned audioSampleFreq = AUDIOSAMPLERATE;
+  audioSampleFreq = setAudioSampleFreq(/*(VGA)?37820:*/audioSampleFreq);
   playSID.setSampleParameters((int) CLOCKSPEED, audioSampleFreq);
 
-  delay(1250);
+  delay(250);
 
-  while (!Serial && ((millis() - m) <= 2500)) {
+  while (!Serial && ((millis() - m) <= 1500)) {
     ;
   }
-Serial.println(audioSampleFreq);
+  
   LED_OFF;
 
   Serial.println("=============================\n");
@@ -300,13 +306,20 @@ Serial.println(audioSampleFreq);
   resetVic();
   cpu_reset();
 
+
   resetExternal();
 
-  while ((millis () - m) <= 1500) {
+  while ((millis() - m) <= 1500) {
     ;
   }
 
-  Serial.println("Starting.\n\n");
+  Serial.println("Starting.\n");
+
+#if VGA && USBHOST
+  add_uVGAhsync();
+#endif
+
+  Serial.println("Starting.\n");
 
 #if FASTBOOT
   cpu_clock(2e6);
@@ -316,19 +329,18 @@ Serial.println(audioSampleFreq);
   cpu.vic.lineClock.begin( oneRasterLine, LINETIMER_DEFAULT_FREQ);
   cpu.vic.lineClock.priority( ISR_PRIORITY_RASTERLINE );
 
+  Serial.println("Starting.\n");
   attachInterrupt(digitalPinToInterrupt(PIN_RESET), resetMachine, RISING);
-
-#if VGA && USBHOST
-  add_uVGAhsync();
-#endif
-
+  
   listInterrupts();
+
 }
 
 
 // Switch off/replace Teensyduinos` yield and systick stuff
 
 void yield(void) {
+	
   static volatile uint8_t running = 0;
   if (running) return;
   running = 1;
@@ -340,9 +352,7 @@ void yield(void) {
     Serial.write(r);
   }
   do_sendString();
-
-
+  
   running = 0;
-  asm ("WFE");
 };
 

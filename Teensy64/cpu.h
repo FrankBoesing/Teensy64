@@ -46,7 +46,7 @@
 #define RAMSIZE 		65536	//Bytes
 
 
-#include "settings.h"
+#include "Teensy64.h"
 #include "roms.h"
 #include "patches.h"
 #include "util.h"
@@ -56,10 +56,9 @@
 #include "cia1.h"
 #include "cia2.h"
 
-#if 1
+
 #include <reSID.h>
 extern AudioPlaySID  playSID;
-#endif
 
 #define BASE_STACK     0x100
 
@@ -91,15 +90,11 @@ struct tcpu {
   w_rarr_ptr_t plamap_w; //Memory-Mapping write
   uint8_t _exrom:1, _game:1;
   uint8_t nmiLine;
-
-#if PORTREAD_USE_RAM
-  tio io;
-#endif
-
+ 
   tvic vic;
   tcia cia1;
   tcia cia2;
-
+  
   union {
 	uint8_t RAM[RAMSIZE];
 	uint16_t RAM16[RAMSIZE/2];
@@ -113,6 +108,10 @@ struct tcpu {
 
 };
 
+#if PORTREAD_USE_RAM
+extern struct tio io;
+#endif
+
 extern struct tcpu cpu;
 
 void cpu_reset();
@@ -124,72 +123,70 @@ void cpu_disableExactTiming();
 
 void cia_clockt(int ticks);
 
-
-
-#define CORE_PIN0_PORT	cpu.io.gpiob
-#define CORE_PIN1_PORT	cpu.io.gpiob
-#define CORE_PIN2_PORT	cpu.io.gpiod
-#define CORE_PIN3_PORT	cpu.io.gpioa
-#define CORE_PIN4_PORT	cpu.io.gpioa
-#define CORE_PIN5_PORT	cpu.io.gpiod
-#define CORE_PIN6_PORT	cpu.io.gpiod
-#define CORE_PIN7_PORT	cpu.io.gpiod
-#define CORE_PIN8_PORT	cpu.io.gpiod
-#define CORE_PIN9_PORT	cpu.io.gpioc
-#define CORE_PIN10_PORT	cpu.io.gpioc
-#define CORE_PIN11_PORT	cpu.io.gpioc
-#define CORE_PIN12_PORT	cpu.io.gpioc
-#define CORE_PIN13_PORT	cpu.io.gpioc
-#define CORE_PIN14_PORT	cpu.io.gpiod
-#define CORE_PIN15_PORT	cpu.io.gpioc
-#define CORE_PIN16_PORT	cpu.io.gpiob
-#define CORE_PIN17_PORT	cpu.io.gpiob
-#define CORE_PIN18_PORT	cpu.io.gpiob
-#define CORE_PIN19_PORT	cpu.io.gpiob
-#define CORE_PIN20_PORT	cpu.io.gpiod
-#define CORE_PIN21_PORT	cpu.io.gpiod
-#define CORE_PIN22_PORT	cpu.io.gpioc
-#define CORE_PIN23_PORT	cpu.io.gpioc
-#define CORE_PIN24_PORT	cpu.io.gpioe
-#define CORE_PIN25_PORT	cpu.io.gpioa
-#define CORE_PIN26_PORT	cpu.io.gpioa
-#define CORE_PIN27_PORT	cpu.io.gpioa
-#define CORE_PIN28_PORT	cpu.io.gpioa
-#define CORE_PIN29_PORT	cpu.io.gpiob
-#define CORE_PIN30_PORT	cpu.io.gpiob
-#define CORE_PIN31_PORT	cpu.io.gpiob
-#define CORE_PIN32_PORT	cpu.io.gpiob
-#define CORE_PIN33_PORT	cpu.io.gpioe
-#define CORE_PIN34_PORT	cpu.io.gpioe
-#define CORE_PIN35_PORT	cpu.io.gpioc
-#define CORE_PIN36_PORT	cpu.io.gpioc
-#define CORE_PIN37_PORT	cpu.io.gpioc
-#define CORE_PIN38_PORT	cpu.io.gpioc
-#define CORE_PIN39_PORT	cpu.io.gpioa
-#define CORE_PIN40_PORT	cpu.io.gpioa
-#define CORE_PIN41_PORT	cpu.io.gpioa
-#define CORE_PIN42_PORT	cpu.io.gpioa
-#define CORE_PIN43_PORT	cpu.io.gpiob
-#define CORE_PIN44_PORT	cpu.io.gpiob
-#define CORE_PIN45_PORT	cpu.io.gpiob
-#define CORE_PIN46_PORT	cpu.io.gpiob
-#define CORE_PIN47_PORT	cpu.io.gpiod
-#define CORE_PIN48_PORT	cpu.io.gpiod
-#define CORE_PIN49_PORT	cpu.io.gpiob
-#define CORE_PIN50_PORT	cpu.io.gpiob
-#define CORE_PIN51_PORT	cpu.io.gpiod
-#define CORE_PIN52_PORT	cpu.io.gpiod
-#define CORE_PIN53_PORT	cpu.io.gpiod
-#define CORE_PIN54_PORT	cpu.io.gpiod
-#define CORE_PIN55_PORT	cpu.io.gpiod
-#define CORE_PIN56_PORT	cpu.io.gpioe
-#define CORE_PIN57_PORT	cpu.io.gpioe
-#define CORE_PIN58_PORT	cpu.io.gpioe
-#define CORE_PIN59_PORT	cpu.io.gpioe
-#define CORE_PIN60_PORT	cpu.io.gpioe
-#define CORE_PIN61_PORT	cpu.io.gpioe
-#define CORE_PIN62_PORT	cpu.io.gpioe
-#define CORE_PIN63_PORT	cpu.io.gpioe
+#define CORE_PIN0_PORT	io.gpiob
+#define CORE_PIN1_PORT	io.gpiob
+#define CORE_PIN2_PORT	io.gpiod
+#define CORE_PIN3_PORT	io.gpioa
+#define CORE_PIN4_PORT	io.gpioa
+#define CORE_PIN5_PORT	io.gpiod
+#define CORE_PIN6_PORT	io.gpiod
+#define CORE_PIN7_PORT	io.gpiod
+#define CORE_PIN8_PORT	io.gpiod
+#define CORE_PIN9_PORT	io.gpioc
+#define CORE_PIN10_PORT	io.gpioc
+#define CORE_PIN11_PORT	io.gpioc
+#define CORE_PIN12_PORT	io.gpioc
+#define CORE_PIN13_PORT	io.gpioc
+#define CORE_PIN14_PORT	io.gpiod
+#define CORE_PIN15_PORT	io.gpioc
+#define CORE_PIN16_PORT	io.gpiob
+#define CORE_PIN17_PORT	io.gpiob
+#define CORE_PIN18_PORT	io.gpiob
+#define CORE_PIN19_PORT	io.gpiob
+#define CORE_PIN20_PORT	io.gpiod
+#define CORE_PIN21_PORT	io.gpiod
+#define CORE_PIN22_PORT	io.gpioc
+#define CORE_PIN23_PORT	io.gpioc
+#define CORE_PIN24_PORT	io.gpioe
+#define CORE_PIN25_PORT	io.gpioa
+#define CORE_PIN26_PORT	io.gpioa
+#define CORE_PIN27_PORT	io.gpioa
+#define CORE_PIN28_PORT	io.gpioa
+#define CORE_PIN29_PORT	io.gpiob
+#define CORE_PIN30_PORT	io.gpiob
+#define CORE_PIN31_PORT	io.gpiob
+#define CORE_PIN32_PORT	io.gpiob
+#define CORE_PIN33_PORT	io.gpioe
+#define CORE_PIN34_PORT	io.gpioe
+#define CORE_PIN35_PORT	io.gpioc
+#define CORE_PIN36_PORT	io.gpioc
+#define CORE_PIN37_PORT	io.gpioc
+#define CORE_PIN38_PORT	io.gpioc
+#define CORE_PIN39_PORT	io.gpioa
+#define CORE_PIN40_PORT	io.gpioa
+#define CORE_PIN41_PORT	io.gpioa
+#define CORE_PIN42_PORT	io.gpioa
+#define CORE_PIN43_PORT	io.gpiob
+#define CORE_PIN44_PORT	io.gpiob
+#define CORE_PIN45_PORT	io.gpiob
+#define CORE_PIN46_PORT	io.gpiob
+#define CORE_PIN47_PORT	io.gpiod
+#define CORE_PIN48_PORT	io.gpiod
+#define CORE_PIN49_PORT	io.gpiob
+#define CORE_PIN50_PORT	io.gpiob
+#define CORE_PIN51_PORT	io.gpiod
+#define CORE_PIN52_PORT	io.gpiod
+#define CORE_PIN53_PORT	io.gpiod
+#define CORE_PIN54_PORT	io.gpiod
+#define CORE_PIN55_PORT	io.gpiod
+#define CORE_PIN56_PORT	io.gpioe
+#define CORE_PIN57_PORT	io.gpioe
+#define CORE_PIN58_PORT	io.gpioe
+#define CORE_PIN59_PORT	io.gpioe
+#define CORE_PIN60_PORT	io.gpioe
+#define CORE_PIN61_PORT	io.gpioe
+#define CORE_PIN62_PORT	io.gpioe
+#define CORE_PIN63_PORT	io.gpioe
 
 // General-Purpose Input/Output (GPIO)
 struct KINETIS_GPIO_t {
@@ -200,7 +197,7 @@ struct KINETIS_GPIO_t {
 	volatile uint32_t PDIR;
 	volatile uint32_t PDDR;
 	volatile uint32_t unused[10];
-} ;
+}__attribute__((packed));
 
 typedef struct {
 	struct KINETIS_GPIO_t A;
@@ -208,22 +205,23 @@ typedef struct {
 	struct KINETIS_GPIO_t C;
 	struct KINETIS_GPIO_t D;
 	struct KINETIS_GPIO_t E;
-} KINETIS_GPIOS_t;
+}__attribute__((packed)) KINETIS_GPIOS_t;
 
 #define KINETIS_GPIO		(*(KINETIS_GPIOS_t *)0x400FF000)
 
 #if PORTREAD_USE_RAM
 #define READGPIO {\
-	cpu.io.gpioa = KINETIS_GPIO.A.PDIR;\
-	cpu.io.gpiob = KINETIS_GPIO.B.PDIR;\
-	cpu.io.gpioc = KINETIS_GPIO.C.PDIR;\
-	cpu.io.gpiod = KINETIS_GPIO.D.PDIR;\
-	cpu.io.gpioe = KINETIS_GPIO.E.PDIR;\
+	io.gpioa = GPIOA_PDIR;\
+	io.gpiob = GPIOB_PDIR;\
+	io.gpioc = GPIOC_PDIR;\
+	io.gpiod = GPIOD_PDIR;\
+	io.gpioe = GPIOE_PDIR;\
 	/*DAC0_DAT0L = cpu.io.dac0;*/\
 	/*DAC1_DAT0L = cpu.io.dac1;*/\
 }
+
 #else
-#define READGPIO
+#define READGPIO {}
 #endif
 
 static inline uint8_t gpioRead(uint8_t pin) __attribute__((always_inline, unused));
@@ -364,7 +362,7 @@ static inline uint8_t gpioRead(uint8_t pin)
 		}
 	} else {
 		Serial.println("Pin# not constant");
-		return 0;
+		return digitalRead(pin);		
 	}
 #else
 	return digitalReadFast(pin);

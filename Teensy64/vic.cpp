@@ -45,12 +45,7 @@
   - optimize more
 */
 
-
-#include "cpu.h"
-#include "settings.h"
-
-#include "util.h"
-#include "roms.h"
+#include "Teensy64.h"
 #include "vic.h"
 #include "vic_palette.h"
 
@@ -1335,6 +1330,7 @@ void vic_do(void) {
   //max_x =  (!cpu.vic.CSEL) ? 40:38;
   p = SCREENMEM + (r - FIRSTDISPLAYLINE) * LINE_MEM_WIDTH;
 
+  
 
 #if !VGA
   pe = p + SCREEN_WIDTH;

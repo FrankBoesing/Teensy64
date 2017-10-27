@@ -37,12 +37,10 @@
 #define Teensy64_vic_h_
 
 #include <Arduino.h>
-#include "settings.h"
 #include "Teensy64.h"
 #include "IntervalTimer.h"
 
 #if VGA
-
 #define BORDER         36 // Top/Bottom Screen border
 #define SCREEN_WIDTH   320
 #define LINE_MEM_WIDTH 464
@@ -57,7 +55,6 @@ typedef uint8_t tpixel ;
 #define SCREENMEM VGA_frame_buffer + LINE_MEM_WIDTH * YOFFSET + XOFFSET
 
 #else
-
 #include "ili9341_t64.h"
 #define TFT_HEIGHT  	240
 #define TFT_WIDTH   	320

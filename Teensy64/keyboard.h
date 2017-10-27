@@ -36,8 +36,6 @@
 #ifndef Teensy64_keyboard_h_
 #define Teensy64_keyboard_h_
 
-#include <Arduino.h>
-
 void initKeyboard();
 void initJoysticks();
 

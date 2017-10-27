@@ -42,8 +42,8 @@ void enableCycleCounter(void) {
 }
 
 extern "C" volatile uint32_t systick_millis_count;
-FASTRUN void mySystick_isr(void) { systick_millis_count++; }
-FASTRUN void myUnused_isr(void) {};
+void mySystick_isr(void) { systick_millis_count++; }
+void myUnused_isr(void) {};
 
 void disableEventResponder(void) {
 	_VectorsRam[14] = myUnused_isr;  // pendablesrvreq
@@ -53,7 +53,8 @@ void disableEventResponder(void) {
 
 
 #define PDB_CONFIG (PDB_SC_TRGSEL(15) | PDB_SC_PDBEN | PDB_SC_CONT | PDB_SC_PDBIE | PDB_SC_DMAEN)
-static float setDACFreq(float freq) {
+static unsigned int setDACFreq(unsigned int freq) {
+	
   if (!(SIM_SCGC6 & SIM_SCGC6_PDB)) return 0;
 
   unsigned int t = (float)F_BUS / freq - 0.5f;
@@ -63,6 +64,7 @@ static float setDACFreq(float freq) {
   PDB0_SC = PDB_CONFIG | PDB_SC_LDOK;
   PDB0_SC = PDB_CONFIG | PDB_SC_SWTRIG;
   PDB0_CH0C1 = 0x0101;
+  
   return (float)F_BUS / t;
 }
 
@@ -75,10 +77,12 @@ unsigned int setAudioSampleFreq(unsigned int freq) {
 void setAudioOff(void) {
 
   if (!(SIM_SCGC6 & SIM_SCGC6_PDB)) return;
+  
   NVIC_DISABLE_IRQ(IRQ_USBOTG);
   //NVIC_DISABLE_IRQ(IRQ_USBHS);
   AudioNoInterrupts();
   PDB0_SC = 0;
+
 }
 
 void setAudioOn(void) {
@@ -89,6 +93,7 @@ void setAudioOn(void) {
   AudioInterrupts();
   NVIC_ENABLE_IRQ(IRQ_USBOTG);
   //NVIC_ENABLE_IRQ(IRQ_USBHS);
+  
 }
 
 void listInterrupts() {

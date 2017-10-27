@@ -32,10 +32,10 @@
     Programm erhalten haben. Wenn nicht, siehe <http://www.gnu.org/licenses/>.
 
 */
-#include <Arduino.h>
+
 #include "Teensy64.h"
 #include "keyboard.h"
-#include "cpu.h"
+
 
 #if USBHOST
 #include "usb_USBHost.h"
@@ -246,6 +246,13 @@ uint8_t cia1PORTA(void) {
   if ( gpioRead(PIN_JOY2_4) == 0 ) v &= 0xF7;
   if ( gpioRead(PIN_JOY2_BTN) == 0 ) v &= 0xEF;
 
+/*
+    if ( digitalReadFast(PIN_JOY2_1) == 0 ) v &= 0xFE;
+  if ( digitalReadFast(PIN_JOY2_2) == 0 ) v &= 0xFD;
+  if ( digitalReadFast(PIN_JOY2_3) == 0 ) v &= 0xFB;
+  if ( digitalReadFast(PIN_JOY2_4) == 0 ) v &= 0xF7;
+  if ( digitalReadFast(PIN_JOY2_BTN) == 0 ) v &= 0xEF;
+*/  
   if (!kbdData.kv) return v; //Keine Taste gedrückt
 
   uint8_t filter = ~cpu.cia1.R[0x01] & cpu.cia1.R[0x03];
@@ -283,8 +290,13 @@ uint8_t cia1PORTB(void) {
   if ( gpioRead(PIN_JOY1_3) == 0 ) v &= 0xFB;
   if ( gpioRead(PIN_JOY1_4) == 0 ) v &= 0xF7;
   if ( gpioRead(PIN_JOY1_BTN) == 0 ) v &= 0xEF;
-
-
+/*
+  if ( digitalReadFast(PIN_JOY1_1) == 0 ) v &= 0xFE;
+  if ( digitalReadFast(PIN_JOY1_2) == 0 ) v &= 0xFD;
+  if ( digitalReadFast(PIN_JOY1_3) == 0 ) v &= 0xFB;
+  if ( digitalReadFast(PIN_JOY1_4) == 0 ) v &= 0xF7;
+  if ( digitalReadFast(PIN_JOY1_BTN) == 0 ) v &= 0xEF;
+*/  
   if (!kbdData.kv) return v; //Keine Taste gedrückt
 
   uint8_t filter = ~cpu.cia1.R[0x00] & cpu.cia1.R[0x02];
