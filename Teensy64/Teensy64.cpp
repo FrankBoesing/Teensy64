@@ -121,15 +121,27 @@ void oneRasterLine(void) {
 	These functions sync to the HSYNC-Signal, and enable USB on the right edge of the screen only.
 	In addition, all GPIOs are read.
 */
-#if VGA && USBHOST
+#define USBHS_PERIODIC_TRANSFERS_DISABLE 0
+#if VGA
 volatile int16_t rasterLineCounterVGA;
+#if (!USBHOST) || (!USBHS_PERIODIC_TRANSFERS)
+FASTRUN void ftm0_isr(void) {
+	uint32_t i1 = FTM0_C2SC;
+	if (i1 & FTM_CSC_CHF) {
+		FTM0_C2SC = i1 & ~FTM_CSC_CHF;
+		READGPIO;
+//		digitalWriteFast(13,0);
+	}
+}
+#else	
+//As above, but with enable/disable USB Periodic transfers
 FASTRUN void ftm0_isr(void) {
 
 	int16_t c = rasterLineCounterVGA;
 	uint32_t i1 = FTM0_C2SC;
 	if (i1 & FTM_CSC_CHF) {
-		FTM0_C2SC = i1 & ~FTM_CSC_CHF;
-		USBHS_USBCMD |= ( USBHS_USBCMD_PSE /* | USBHS_USBCMD_ASE */); //Enable USB Host Periodic Transfers
+		FTM0_C2SC = i1 & ~FTM_CSC_CHF;	
+		USBHS_USBCMD |= ( USBHS_USBCMD_PSE /* | USBHS_USBCMD_ASE */); //Enable USB Host Periodic Transfers	
 		READGPIO;
 		c++;
 		if (c == modeline.vtotal) {c = 0;}
@@ -141,13 +153,14 @@ FASTRUN void ftm0_isr(void) {
 		if (c > 51 && c < 593) USBHS_USBCMD &= ~(USBHS_USBCMD_PSE /* | USBHS_USBCMD_ASE */);//Disable USB Host Periodic Transfers
 //  	digitalWriteFast(13,1);
 	}
-	
 }
+#endif
 
 void add_uVGAhsync(void) {
+#if USBHOST		
   Serial.println("USB-HOST: Disabling Async transfers.");
   USBHS_USBCMD &= ~(USBHS_USBCMD_ASE);//Disable USB Host Async Transfers
-  
+#endif  
   Serial.println("uVGA: Add hSync interrupt.");
 
   // Add channels 2 + 3 to FTM 0 as triggers for FTM0 interrupt
@@ -165,11 +178,15 @@ void add_uVGAhsync(void) {
   Serial.print("FTM 0 Channel 1 V:");
   Serial.println(FTM0_C1V);
 #endif
-
+  FTM0_C7SC |= FTM_CSC_DMA;
   //Add channels 2+3
   FTM0_C2SC = FTM0_C0SC | FTM_CSC_CHIE;
   FTM0_C2V = FTM0_C0V - 260; //Value determined experimentally
+#if (!USBHOST) || (!USBHS_PERIODIC_TRANSFERS)  
+  FTM0_C3SC = FTM0_C1SC;
+#else
   FTM0_C3SC = FTM0_C1SC | FTM_CSC_CHIE;
+#endif	
   FTM0_C3V = FTM0_C1V + 145; //Value determined experimentally
   const uint32_t channel_shift = (2 >> 1) << 3;	// combine bits is at position (channel pair number (=channel number /2) * 8)
   FTM0_COMBINE |= ((FTM0_COMBINE & ~(0x000000FF << channel_shift)) | ((FTM_COMBINE_COMBINE0 | FTM_COMBINE_COMP0) << channel_shift));
@@ -238,7 +255,7 @@ void initMachine() {
 
   uvga.set_static_framebuffer(VGA_frame_buffer);
   uvga.begin(&modeline);
-  uvga.clear(0xff);
+  uvga.clear(0x00);
  // for (int i =0; i<299;i++) memset(VGA_frame_buffer + i*464, palette[14], 452-(37));
 
 #else
@@ -249,11 +266,17 @@ void initMachine() {
 
 #endif
 
-  SDinitialized = SD.begin();
+  SDinitialized = SD.begin();  
+  float audioSampleFreq;  
 
-  unsigned audioSampleFreq = AUDIOSAMPLERATE;
-  audioSampleFreq = setAudioSampleFreq(/*(VGA)?37820:*/audioSampleFreq);
-  playSID.setSampleParameters((int) CLOCKSPEED, audioSampleFreq);
+#if !VGA  
+  audioSampleFreq = AUDIOSAMPLERATE;
+  audioSampleFreq = setAudioSampleFreq(audioSampleFreq);
+#else 
+  audioSampleFreq = ((float)modeline.pixel_clock / (float) modeline.htotal);
+ // audioSampleFreq = 36189.93f;
+#endif  
+  playSID.setSampleParameters(CLOCKSPEED, audioSampleFreq);
 
   delay(250);
 

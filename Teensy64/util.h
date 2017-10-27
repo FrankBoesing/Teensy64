@@ -53,7 +53,7 @@ unsigned fbmillis(void) { return (ARM_DWT_CYCCNT * (1000.0/F_CPU)); }
 unsigned fbmicros(void) { return (ARM_DWT_CYCCNT * (1000000.0/F_CPU)); }
 unsigned fbnanos(void) { return (ARM_DWT_CYCCNT * (1000000000.0 / F_CPU)); }
 
-unsigned int setAudioSampleFreq(unsigned int freq);
+float setAudioSampleFreq(float freq);
 void setAudioOff(void);
 void setAudioOn(void);
 void listInterrupts();

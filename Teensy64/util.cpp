@@ -34,6 +34,7 @@ Copyright Frank Bösing, 2017
 */
 #include <Arduino.h>
 #include "util.h"
+#include "Teensy64.h"
 
 //Attention, don't use WFI-instruction - the CPU does not count cycles during sleep
 void enableCycleCounter(void) {
@@ -50,10 +51,8 @@ void disableEventResponder(void) {
 	_VectorsRam[15] = mySystick_isr; // Short Systick
 }
 
-
-
 #define PDB_CONFIG (PDB_SC_TRGSEL(15) | PDB_SC_PDBEN | PDB_SC_CONT | PDB_SC_PDBIE | PDB_SC_DMAEN)
-static unsigned int setDACFreq(unsigned int freq) {
+static float setDACFreq(float freq) {
 	
   if (!(SIM_SCGC6 & SIM_SCGC6_PDB)) return 0;
 
@@ -68,32 +67,31 @@ static unsigned int setDACFreq(unsigned int freq) {
   return (float)F_BUS / t;
 }
 
-unsigned int setAudioSampleFreq(unsigned int freq) {
+float setAudioSampleFreq(float freq) {
   int f;
   f = setDACFreq(freq);
   return f;
 }
 
-void setAudioOff(void) {
-
+void setAudioOff(void) { 
+#if !VGA  
   if (!(SIM_SCGC6 & SIM_SCGC6_PDB)) return;
-  
-  NVIC_DISABLE_IRQ(IRQ_USBOTG);
-  //NVIC_DISABLE_IRQ(IRQ_USBHS);
-  AudioNoInterrupts();
   PDB0_SC = 0;
-
+#endif
+  AudioNoInterrupts();
+  NVIC_DISABLE_IRQ(IRQ_USBOTG);
+  //NVIC_DISABLE_IRQ(IRQ_USBHS);   
 }
 
 void setAudioOn(void) {
-
+#if !VGA  
   if (!(SIM_SCGC6 & SIM_SCGC6_PDB)) return;
   PDB0_SC = PDB_CONFIG | PDB_SC_LDOK;
   PDB0_SC = PDB_CONFIG | PDB_SC_SWTRIG;
+#endif  
   AudioInterrupts();
   NVIC_ENABLE_IRQ(IRQ_USBOTG);
-  //NVIC_ENABLE_IRQ(IRQ_USBHS);
-  
+  //NVIC_ENABLE_IRQ(IRQ_USBHS);  
 }
 
 void listInterrupts() {

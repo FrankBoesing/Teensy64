@@ -95,11 +95,7 @@ extern uint8_t SDinitialized;
 #define MCU_C64_RATIO   ((float)F_CPU / CLOCKSPEED) //MCU Cycles per C64 Cycle
 #define US_C64_CYCLE    (1000000.0f / CLOCKSPEED) // Duration (µs) of a C64 Cycle
 
-
-//#define AUDIOSAMPLERATE     ((int)CLOCKSPEED / 16)// (~62kHz)
-//#define AUDIOSAMPLERATE     ((int)CLOCKSPEED / 32)// (~31kHz)
-//#define AUDIOSAMPLERATE     ((int)CLOCKSPEED / 64)// (~15kHz)
-#define AUDIOSAMPLERATE     (LINEFREQ * 2)// (~15kHz) // TODO: Which is better (Speed/Quality)?
+#define AUDIOSAMPLERATE     (LINEFREQ * 2)// (~32kHz)
 
 #define ISR_PRIORITY_RASTERLINE   255
 

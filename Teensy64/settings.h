@@ -37,7 +37,7 @@
 #define settings_h_
 
 #ifndef VGA
-#define VGA 			0 	//use 0 for ILI9341 Display
+#define VGA 			1 	//use 0 for ILI9341 Display
 #endif
 
 #ifndef PS2KEYBOARD
@@ -55,7 +55,7 @@
 #endif
 
 
-#define EXACTTIMINGDURATION 800ul //ms exact timing after IEC-BUS activity
+#define EXACTTIMINGDURATION 600ul //ms exact timing after IEC-BUS activity
 
 
 

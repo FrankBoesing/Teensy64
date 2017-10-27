@@ -25,9 +25,9 @@
  */
 
 #include "output_dac.h"
-//#include "utility/pdb.h"
-#define PDB_CONFIG (PDB_SC_TRGSEL(15) | PDB_SC_PDBEN | PDB_SC_CONT | PDB_SC_PDBIE | PDB_SC_DMAEN)
+#include "Teensy64.h"
 
+#define PDB_CONFIG (PDB_SC_TRGSEL(15) | PDB_SC_PDBEN | PDB_SC_CONT | PDB_SC_PDBIE | PDB_SC_DMAEN)
 
 #if F_BUS == 120000000
   #define PDB_PERIOD (2720-1)
@@ -84,6 +84,7 @@ void AudioOutputAnalog::begin(void)
 	}
 
 	// set the programmable delay block to trigger DMA requests
+#if !VGA
 	if (!(SIM_SCGC6 & SIM_SCGC6_PDB)
 	  || (PDB0_SC & PDB_CONFIG) != PDB_CONFIG
 	  || PDB0_MOD != PDB_PERIOD
@@ -96,6 +97,7 @@ void AudioOutputAnalog::begin(void)
 		PDB0_SC = PDB_CONFIG | PDB_SC_SWTRIG;
 		PDB0_CH0C1 = 0x0101;
 	}
+#endif
 
 	dma.TCD->SADDR = dac_buffer;
 	dma.TCD->SOFF = 2;
@@ -108,7 +110,11 @@ void AudioOutputAnalog::begin(void)
 	dma.TCD->DLASTSGA = 0;
 	dma.TCD->BITER_ELINKNO = sizeof(dac_buffer) / 2;
 	dma.TCD->CSR = DMA_TCD_CSR_INTHALF | DMA_TCD_CSR_INTMAJOR;
+#if !VGA
 	dma.triggerAtHardwareEvent(DMAMUX_SOURCE_PDB);
+#else
+	dma.triggerAtHardwareEvent(DMAMUX_SOURCE_FTM0_CH7);
+#endif
 	update_responsibility = update_setup();
 	dma.enable();
 	dma.attachInterrupt(isr);

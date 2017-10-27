@@ -24,7 +24,11 @@
 #include <Arduino.h>
 #include "usb_USBHost.h"
 
-#define PERIODIC_LIST_SIZE  32
+#if defined(USBHS_PERIODIC_LIST_SIZE)
+#define PERIODIC_LIST_SIZE (USBHS_PERIODIC_LIST_SIZE)
+#else
+#define PERIODIC_LIST_SIZE  16
+#endif
 
 static UDMAMEM uint32_t periodictable[PERIODIC_LIST_SIZE] __attribute__ ((aligned(4096), used));
 static uint8_t  uframe_bandwidth[PERIODIC_LIST_SIZE*8];

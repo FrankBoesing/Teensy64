@@ -1479,12 +1479,82 @@ void vic_do(void) {
     vc = (vc + 40) & 0x3ff;
 
   } else {
-    // 3.7.3.9. Idle-Zustand
+	  /*
+3.7.3.9. Idle-Zustand
+---------------------
+
+Im Idle-Zustand liest der VIC die Grafikdaten von Adresse $3fff (bzw. $39ff
+bei gesetztem ECM-Bit) und stellt sie im ausgewählten Grafikmodus dar,
+wobei aber die Videomatrix-Daten (normalerweise in den c-Zugriffen gelesen)
+nur aus "0"-Bits bestehen. Es wird also immer wiederholt das Byte an
+Adresse $3fff/$39ff ausgegeben.
+
+c-Zugriff
+
+ Es werden keine c-Zugriffe ausgeführt.
+
+ Daten
+
+ +----+----+----+----+----+----+----+----+----+----+----+----+
+ | 11 | 10 |  9 |  8 |  7 |  6 |  5 |  4 |  3 |  2 |  1 |  0 |
+ +----+----+----+----+----+----+----+----+----+----+----+----+
+ |  0 |  0 |  0 |  0 |  0 |  0 |  0 |  0 |  0 |  0 |  0 |  0 |
+ +----+----+----+----+----+----+----+----+----+----+----+----+
+
+g-Zugriff
+
+ Adressen (ECM=0)
+
+ +----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+ | 13 | 12 | 11 | 10 |  9 |  8 |  7 |  6 |  5 |  4 |  3 |  2 |  1 |  0 |
+ +----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+ |  1 |  1 |  1 |  1 |  1 |  1 |  1 |  1 |  1 |  1 |  1 |  1 |  1 |  1 |
+ +----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+
+ Adressen (ECM=1)
+
+ +----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+ | 13 | 12 | 11 | 10 |  9 |  8 |  7 |  6 |  5 |  4 |  3 |  2 |  1 |  0 |
+ +----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+ |  1 |  1 |  1 |  0 |  0 |  1 |  1 |  1 |  1 |  1 |  1 |  1 |  1 |  1 |
+ +----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+
+ Daten
+
+ +----+----+----+----+----+----+----+----+
+ |  7 |  6 |  5 |  4 |  3 |  2 |  1 |  0 |
+ +----+----+----+----+----+----+----+----+
+ |         8 Pixel (1 Bit/Pixel)         | Standard-Textmodus/
+ |                                       | Multicolor-Textmodus/
+ | "0": Hintergrundfarbe 0 ($d021)       | ECM-Textmodus
+ | "1": Schwarz                          |
+ +---------------------------------------+
+ |         8 Pixel (1 Bit/Pixel)         | Standard-Bitmap-Modus/
+ |                                       | Ungültiger Textmodus/
+ | "0": Schwarz (Hintergrund)            | Ungültiger Bitmap-Modus 1
+ | "1": Schwarz (Vordergrund)            |
+ +---------------------------------------+
+ |         4 Pixel (2 Bit/Pixel)         | Multicolor-Bitmap-Modus
+ |                                       |
+ | "00": Hintergrundfarbe 0 ($d021)      |
+ | "01": Schwarz (Hintergrund)           |
+ | "10": Schwarz (Vordergrund)           |
+ | "11": Schwarz (Vordergrund)           |
+ +---------------------------------------+
+ |         4 Pixel (2 Bit/Pixel)         | Ungültiger Bitmap-Modus 2
+ |                                       |
+ | "00": Schwarz (Hintergrund)           |
+ | "01": Schwarz (Hintergrund)           |
+ | "10": Schwarz (Vordergrund)           |
+ | "11": Schwarz (Vordergrund)           |
+ +---------------------------------------+
+*/ 
 	//Modes 1 & 3
     if (mode == 1 || mode == 3) {
 		modes[mode](p, pe, spl, vc);
-    } else//TODO: all other modes
+    } else {//TODO: all other modes
 	fastFillLine(p, pe, cpu.vic.palette[0], spl);
+	}
   }
 
   /*
