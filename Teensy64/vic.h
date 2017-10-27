@@ -74,7 +74,7 @@ extern uint16_t screen[TFT_HEIGHT][TFT_WIDTH];
 
 #endif
 
-
+#define SPRITE_MAX_X (320 + 24)
 
 /* for later use
 struct tsprite {
@@ -153,7 +153,7 @@ struct tvic {
 
   //tsprite spriteInfo[8];//todo
   //uint16_t spriteLine[SCREEN_WIDTH + 24 * 2];
-  uint16_t spriteLine[512];
+  uint16_t spriteLine[SPRITE_MAX_X];
 
   uint8_t lineMemChr[40];
   uint8_t lineMemCol[40];
