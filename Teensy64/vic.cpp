@@ -78,7 +78,7 @@ void fastFillLineNoSprites(tpixel * p, const tpixel * pe, const uint16_t col);
 
 #define BADLINE(x) {if (cpu.vic.badline) { \
       cpu.vic.lineMemChr[x] = cpu.RAM[cpu.vic.videomatrix + vc + x]; \
-      cpu.vic.lineMemCol[x] = cpu.vic.COLORRAM[vc + x]; \
+	  cpu.vic.lineMemCol[x] = cpu.vic.COLORRAM[vc + x]; \
 	  cia1_clock(1); \
 	  cia2_clock(1); \
     } else { \
@@ -269,17 +269,23 @@ void mode1 (tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
   if (cpu.vic.lineHasSprites) {
 
     colors[0] = cpu.vic.B0C;
-    colors[1] = cpu.vic.R[0x22];
-    colors[2] = cpu.vic.R[0x23];
+
     do {
 
-      BADLINE(x);
+	  if (cpu.vic.idle) {
+		cpu_clock(1);
+		fgcol = colors[1] = colors[2] = colors[3] = 0;
+		chr = cpu.RAM[cpu.vic.bank + 0x3fff];
+	  } else {
+        BADLINE(x);
+        fgcol = cpu.vic.lineMemCol[x];
+	    colors[1] = cpu.vic.R[0x22];
+        colors[2] = cpu.vic.R[0x23];
+        colors[3] = fgcol & 0x07;
+		chr = cpu.vic.charsetPtr[cpu.vic.lineMemChr[x] * 8];
+	  }
 
-      chr = cpu.vic.charsetPtr[cpu.vic.lineMemChr[x] * 8];
-      fgcol = cpu.vic.lineMemCol[x];
       x++;
-
-      colors[3] = fgcol & 0x07;
 
       if ((fgcol & 0x08) == 0) { //Zeichen ist HIRES
 
@@ -380,15 +386,25 @@ void mode1 (tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
 
     while (p < pe - 8) {
 
-      BADLINE(x);
+	  int c;
 
-      bgcol = cpu.vic.colors[1];
-      colors[0] = bgcol;
-	  colors[1] = cpu.vic.colors[2];
-  	  colors[2] = cpu.vic.colors[3];
+	  bgcol = cpu.vic.colors[1];
+	  colors[0] = bgcol;
 
-      chr = cpu.vic.charsetPtr[cpu.vic.lineMemChr[x] * 8];
-      int c = cpu.vic.lineMemCol[x];
+	  if (cpu.vic.idle) {
+		cpu_clock(1);
+		c = colors[1] = colors[2] = colors[3] = 0;
+		chr = cpu.RAM[cpu.vic.bank + 0x3fff];
+	  } else {
+        BADLINE(x);
+
+	    colors[1] = cpu.vic.colors[2];
+  	    colors[2] = cpu.vic.colors[3];
+
+        chr = cpu.vic.charsetPtr[cpu.vic.lineMemChr[x] * 8];
+        c = cpu.vic.lineMemCol[x];
+	  }
+
       x++;
 
       if ((c & 0x08) == 0) { //Zeichen ist HIRES
@@ -414,17 +430,27 @@ void mode1 (tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
 
     while (p < pe) {
 
-      BADLINE(x);
+	  int c;
 
 	  bgcol = cpu.vic.colors[1];
-      colors[0] = bgcol;
-	  colors[1] = cpu.vic.colors[2];
-  	  colors[2] = cpu.vic.colors[3];
+	  colors[0] = bgcol;
 
-      chr = cpu.vic.charsetPtr[cpu.vic.lineMemChr[x] * 8];
-      int c = cpu.vic.lineMemCol[x];
+	  if (cpu.vic.idle) {
+		cpu_clock(1);
+		c = colors[1] = colors[2] = colors[3] = 0;
+		chr = cpu.RAM[cpu.vic.bank + 0x3fff];
+	  } else {
+        BADLINE(x);
+
+	    colors[1] = cpu.vic.colors[2];
+  	    colors[2] = cpu.vic.colors[3];
+
+        chr = cpu.vic.charsetPtr[cpu.vic.lineMemChr[x] * 8];
+        c = cpu.vic.lineMemCol[x];
+	  }
 
       x++;
+
       if ((c & 0x08) == 0) { //Zeichen ist HIRES
         fgcol = cpu.vic.palette[c & 0x07];
         *p++ = (chr & 0x80) ? fgcol : bgcol; if (p >= pe) break;
@@ -604,26 +630,29 @@ void mode3 (tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
 
     POKE 53265,PEEK(53625)OR 32: POKE 53270,PEEK(53270)OR 16
   */
-
-  uint8_t chr, x;
-  uint16_t pixel;
   uint8_t * bP = cpu.vic.bitmapPtr + vc * 8 + cpu.vic.rc;
+  uint16_t colors[4];
+  uint16_t pixel;
+  uint8_t chr, x;
 
   x = 0;
 
   if (cpu.vic.lineHasSprites) {
-    uint16_t colors[4];
     colors[0] = cpu.vic.B0C;
     do {
 
-      BADLINE(x);
-
-      uint8_t t = cpu.vic.lineMemChr[x];
-      colors[1] = t >> 4;//10
-      colors[2] = t & 0x0f; //01
-      colors[3] = cpu.vic.lineMemCol[x];
-
-      chr = bP[x * 8];
+	  if (cpu.vic.idle) {
+	    cpu_clock(1);
+	    colors[1] = colors[2] = colors[3] = 0;
+	    chr = cpu.RAM[cpu.vic.bank + 0x3fff];
+	  } else {
+        BADLINE(x);
+        uint8_t t = cpu.vic.lineMemChr[x];
+        colors[1] = t >> 4;//10
+        colors[2] = t & 0x0f; //01
+        colors[3] = cpu.vic.lineMemCol[x];
+  	    chr = bP[x * 8];
+  	  };
 
       x++;
 
@@ -679,20 +708,25 @@ void mode3 (tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
 
   } else { //Keine Sprites
 
-    uint16_t colors[4];
-
     while (p < pe - 8) {
 
-      BADLINE(x);
-
-      uint8_t t = cpu.vic.lineMemChr[x];
 	  colors[0] = cpu.vic.colors[1];
-      colors[1] = cpu.vic.palette[t >> 4];//10
-      colors[2] = cpu.vic.palette[t & 0x0f]; //01
-      colors[3] = cpu.vic.palette[cpu.vic.lineMemCol[x]];
-      chr = bP[x * 8];
-      x++;
 
+	  if (cpu.vic.idle) {
+	    cpu_clock(1);
+	    colors[1] = colors[2] = colors[3] = 0;
+	    chr = cpu.RAM[cpu.vic.bank + 0x3fff];
+	  } else {
+        BADLINE(x);
+
+        uint8_t t = cpu.vic.lineMemChr[x];
+        colors[1] = cpu.vic.palette[t >> 4];//10
+        colors[2] = cpu.vic.palette[t & 0x0f]; //01
+        colors[3] = cpu.vic.palette[cpu.vic.lineMemCol[x]];
+        chr = bP[x * 8];
+	  }
+
+      x++;
       pixel = colors[(chr >> 6) & 0x03]; *p++ = pixel; *p++ = pixel;
       pixel = colors[(chr >> 4) & 0x03]; *p++ = pixel; *p++ = pixel;
       pixel = colors[(chr >> 2) & 0x03]; *p++ = pixel; *p++ = pixel;
@@ -701,14 +735,21 @@ void mode3 (tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
     };
     while (p < pe) {
 
-      BADLINE(x);
-
-      uint8_t t = cpu.vic.lineMemChr[x];
 	  colors[0] = cpu.vic.colors[1];
-      colors[1] = cpu.vic.palette[t >> 4];//10
-      colors[2] = cpu.vic.palette[t & 0x0f]; //01
-      colors[3] = cpu.vic.palette[cpu.vic.lineMemCol[x]];
-      chr = bP[x * 8];
+
+	  if (cpu.vic.idle) {
+	    cpu_clock(1);
+	    colors[1] = colors[2] = colors[3] = 0;
+	    chr = cpu.RAM[cpu.vic.bank + 0x3fff];
+	  } else {
+        BADLINE(x);
+
+        uint8_t t = cpu.vic.lineMemChr[x];
+        colors[1] = cpu.vic.palette[t >> 4];//10
+        colors[2] = cpu.vic.palette[t & 0x0f]; //01
+        colors[3] = cpu.vic.palette[cpu.vic.lineMemCol[x]];
+        chr = bP[x * 8];
+	  }
 
       x++;
       pixel = colors[(chr >> 6) & 0x03]; *p++ = pixel; if (p >= pe) break; *p++ = pixel; if (p >= pe) break;
@@ -1219,6 +1260,7 @@ void vic_do(void) {
   tpixel *pe;
   tpixel *p;
   uint16_t *spl;
+  uint8_t mode;
 
   /*****************************************************************************************************/
   /* Linecounter ***************************************************************************************/
@@ -1330,7 +1372,7 @@ void vic_do(void) {
   //max_x =  (!cpu.vic.CSEL) ? 40:38;
   p = SCREENMEM + (r - FIRSTDISPLAYLINE) * LINE_MEM_WIDTH;
 
-  
+
 
 #if !VGA
   pe = p + SCREEN_WIDTH;
@@ -1420,10 +1462,9 @@ void vic_do(void) {
 
 
   cpu.vic.fgcollision = 0;
+  mode = (cpu.vic.ECM << 2) | (cpu.vic.BMM << 1) | cpu.vic.MCM;
 
- if ( !cpu.vic.idle)  {
-
-    uint8_t mode = (cpu.vic.ECM << 2) | (cpu.vic.BMM << 1) | cpu.vic.MCM;
+  if ( !cpu.vic.idle)  {
 
 #if 0
     static uint8_t omode = 99;
@@ -1435,13 +1476,15 @@ void vic_do(void) {
 #endif
 
     modes[mode](p, pe, spl, vc);
-
-    /*if (!cpu.vic.idle)*/ vc = (vc + 40) & 0x3ff;
+    vc = (vc + 40) & 0x3ff;
 
   } else {
-    //IDLE Mode
-	//TODO: 3.7.3.9. Idle-Zustand
-    fastFillLine(p, pe, cpu.vic.palette[0], spl);
+    // 3.7.3.9. Idle-Zustand
+	//Modes 1 & 3
+    if (mode == 1 || mode == 3) {
+		modes[mode](p, pe, spl, vc);
+    } else//TODO: all other modes
+	fastFillLine(p, pe, cpu.vic.palette[0], spl);
   }
 
   /*
@@ -1594,7 +1637,7 @@ noDisplayIncRC:
           if (r < FIRSTDISPLAYLINE || r > LASTDISPLAYLINE ) continue;
 
           uint16_t x =  (((cpu.vic.R[0x10] >> i) & 1) << 8) | cpu.vic.R[i * 2];
-          if (x >= 320 + 24) continue;
+          if (x >= SPRITE_MAX_X) continue;
 
           unsigned short lineOfSprite = r - y;
           if (R17 & b) lineOfSprite = lineOfSprite / 2; // Y-Expansion
