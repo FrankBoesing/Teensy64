@@ -93,10 +93,6 @@ void oneRasterLine(void) {
 		vic_do_simple();
 	}
 
-#if !VGA 
-	READGPIO;
-#endif
-
     if (--lc == 0) {
       lc = LINEFREQ / 10; // 10Hz
       cia1_checkRTCAlarm();
@@ -114,35 +110,23 @@ void oneRasterLine(void) {
 }
 
 
-
-
 /*
 	The USB HOST feature causes pixel-flicker on VGA, because it with GPIO on the same periphal bus.
 	These functions sync to the HSYNC-Signal, and enable USB on the right edge of the screen only.
-	In addition, all GPIOs are read.
 */
+
 #define USBHS_PERIODIC_TRANSFERS_DISABLE 0
-#if VGA
-volatile int16_t rasterLineCounterVGA;
-#if (!USBHOST) || (!USBHS_PERIODIC_TRANSFERS)
-FASTRUN void ftm0_isr(void) {
-	uint32_t i1 = FTM0_C2SC;
-	if (i1 & FTM_CSC_CHF) {
-		FTM0_C2SC = i1 & ~FTM_CSC_CHF;
-		READGPIO;
-//		digitalWriteFast(13,0);
-	}
-}
-#else	
+
+#if VGA && USBHOST && USBHS_PERIODIC_TRANSFERS_DISABLE
 //As above, but with enable/disable USB Periodic transfers
 FASTRUN void ftm0_isr(void) {
 
 	int16_t c = rasterLineCounterVGA;
 	uint32_t i1 = FTM0_C2SC;
 	if (i1 & FTM_CSC_CHF) {
-		FTM0_C2SC = i1 & ~FTM_CSC_CHF;	
-		USBHS_USBCMD |= ( USBHS_USBCMD_PSE /* | USBHS_USBCMD_ASE */); //Enable USB Host Periodic Transfers	
-		READGPIO;
+		FTM0_C2SC = i1 & ~FTM_CSC_CHF;
+		//Enable USB Host Periodic Transfers
+		USBHS_USBCMD |= ( USBHS_USBCMD_PSE /* | USBHS_USBCMD_ASE */);
 		c++;
 		if (c == modeline.vtotal) {c = 0;}
 		rasterLineCounterVGA = c;
@@ -150,24 +134,29 @@ FASTRUN void ftm0_isr(void) {
 	} else {
 		uint32_t i2 = FTM0_C3SC;
 		FTM0_C3SC = i2 & ~FTM_CSC_CHF;
-		if (c > 51 && c < 593) USBHS_USBCMD &= ~(USBHS_USBCMD_PSE /* | USBHS_USBCMD_ASE */);//Disable USB Host Periodic Transfers
+		//Disable USB Host Periodic Transfers
+		if (c > 51 && c < 593) USBHS_USBCMD &= ~(USBHS_USBCMD_PSE /* | USBHS_USBCMD_ASE */);
 //  	digitalWriteFast(13,1);
 	}
 }
 #endif
 
 void add_uVGAhsync(void) {
-#if USBHOST		
+
+#if VGA && USBHOST
   Serial.println("USB-HOST: Disabling Async transfers.");
   USBHS_USBCMD &= ~(USBHS_USBCMD_ASE);//Disable USB Host Async Transfers
-#endif  
+#endif
+
   Serial.println("uVGA: Add hSync interrupt.");
 
+#if VGA && USBHOST && USBHS_PERIODIC_TRANSFERS_DISABLE
+
   // Add channels 2 + 3 to FTM 0 as triggers for FTM0 interrupt
-  //stop FTM0
+
   uint32_t sc = FTM0_SC;
-  
   FTM0_SC = 0;
+
 #if 0
   Serial.print("FTM 0 Channel 0 SC: 0x");
   Serial.println(FTM0_C0SC, HEX);
@@ -178,16 +167,15 @@ void add_uVGAhsync(void) {
   Serial.print("FTM 0 Channel 1 V:");
   Serial.println(FTM0_C1V);
 #endif
-  FTM0_C7SC |= FTM_CSC_DMA;
+
+
   //Add channels 2+3
-  FTM0_C2SC = FTM0_C0SC | FTM_CSC_CHIE;
+  FTM0_C2SC = FTM0_C0SC | FTM_CSC_CHIE; // With interrupt
   FTM0_C2V = FTM0_C0V - 260; //Value determined experimentally
-#if (!USBHOST) || (!USBHS_PERIODIC_TRANSFERS)  
+
   FTM0_C3SC = FTM0_C1SC;
-#else
-  FTM0_C3SC = FTM0_C1SC | FTM_CSC_CHIE;
-#endif	
   FTM0_C3V = FTM0_C1V + 145; //Value determined experimentally
+
   const uint32_t channel_shift = (2 >> 1) << 3;	// combine bits is at position (channel pair number (=channel number /2) * 8)
   FTM0_COMBINE |= ((FTM0_COMBINE & ~(0x000000FF << channel_shift)) | ((FTM_COMBINE_COMBINE0 | FTM_COMBINE_COMP0) << channel_shift));
 
@@ -201,9 +189,38 @@ void add_uVGAhsync(void) {
   rasterLineCounterVGA = 0;
   interrupts();
 
-  Serial.print("Done.");
-}
 #endif
+
+}
+
+
+
+DMAChannel dma_gpio(false);
+
+void setupGPIO_DMA(void) {
+	dma_gpio.begin(true);
+
+	dma_gpio.TCD->CSR = 0;
+	dma_gpio.TCD->SADDR = &GPIOA_PDIR;
+	dma_gpio.TCD->SOFF = (uintptr_t) &GPIOB_PDIR - (uintptr_t) &GPIOA_PDIR;
+	dma_gpio.TCD->ATTR = DMA_TCD_ATTR_SSIZE(DMA_TCD_ATTR_SIZE_32BIT) | DMA_TCD_ATTR_DSIZE(DMA_TCD_ATTR_SIZE_32BIT);
+	dma_gpio.TCD->NBYTES =  sizeof(uint32_t);
+	dma_gpio.TCD->SLAST = -5 * ( (uintptr_t) &GPIOB_PDIR - (uintptr_t) &GPIOA_PDIR );
+
+	dma_gpio.TCD->DADDR = &io;
+	dma_gpio.TCD->DOFF = sizeof(uint32_t);
+	dma_gpio.TCD->DLASTSGA = -5 * sizeof(uint32_t);
+
+	dma_gpio.TCD->CITER = 5;
+	dma_gpio.TCD->BITER = 5;
+
+	//Audio-DAC is triggered with PDB(NO-VGA) or FTM-Channel 7
+	//Use The Audio-DMA a trigger for this DMA-Channel:
+	dma_gpio.triggerAtCompletionOf(audioout.dma);
+	dma_gpio.enable();
+
+}
+
 
 void initMachine() {
 
@@ -219,6 +236,10 @@ void initMachine() {
 #pragma message "Teensy64: Please select USB Type Raw HID"
 #endif
 
+#if AUDIO_BLOCK_SAMPLES > 32
+#error Teensy64: Set AUDIO_BLOCK_SAMPLES to 32
+#endif
+
   unsigned long m = millis();
 
   //enable sd-card pullups early
@@ -229,9 +250,10 @@ void initMachine() {
   PORTE_PCR5 = PORT_PCR_MUX(1) | PORT_PCR_PE | PORT_PCR_PS;   /* PULLUP SDHC.D2  */
 
 
+  // turn on USB host power for VGA Board
   PORTE_PCR6 = PORT_PCR_MUX(1);
   GPIOE_PDDR |= (1<<6);
-  GPIOE_PSOR = (1<<6); // turn on USB host power for VGA Board
+  GPIOE_PSOR = (1<<6);
 
   pinMode(PIN_RESET, OUTPUT_OPENDRAIN);
   digitalWriteFast(PIN_RESET, 1);
@@ -266,16 +288,16 @@ void initMachine() {
 
 #endif
 
-  SDinitialized = SD.begin();  
-  float audioSampleFreq;  
+  SDinitialized = SD.begin();
+  float audioSampleFreq;
 
-#if !VGA  
+#if !VGA
   audioSampleFreq = AUDIOSAMPLERATE;
   audioSampleFreq = setAudioSampleFreq(audioSampleFreq);
-#else 
+#else
   audioSampleFreq = ((float)modeline.pixel_clock / (float) modeline.htotal);
- // audioSampleFreq = 36189.93f;
-#endif  
+  FTM0_C7SC |= FTM_CSC_DMA; //Enable Audio-DMA-Trigger on every VGA-Rasterline. FTM0 is VGA Timer.
+#endif
   playSID.setSampleParameters(CLOCKSPEED, audioSampleFreq);
 
   delay(250);
@@ -283,7 +305,7 @@ void initMachine() {
   while (!Serial && ((millis() - m) <= 1500)) {
     ;
   }
-  
+
   LED_OFF;
 
   Serial.println("=============================\n");
@@ -329,18 +351,14 @@ void initMachine() {
   resetVic();
   cpu_reset();
 
-
   resetExternal();
 
   while ((millis() - m) <= 1500) {
     ;
   }
 
-  Serial.println("Starting.\n");
-
-#if VGA && USBHOST
   add_uVGAhsync();
-#endif
+  setupGPIO_DMA();
 
   Serial.println("Starting.\n");
 
@@ -354,7 +372,7 @@ void initMachine() {
 
   Serial.println("Starting.\n");
   attachInterrupt(digitalPinToInterrupt(PIN_RESET), resetMachine, RISING);
-  
+
   listInterrupts();
 
 }
@@ -363,7 +381,7 @@ void initMachine() {
 // Switch off/replace Teensyduinos` yield and systick stuff
 
 void yield(void) {
-	
+
   static volatile uint8_t running = 0;
   if (running) return;
   running = 1;
@@ -375,7 +393,7 @@ void yield(void) {
     Serial.write(r);
   }
   do_sendString();
-  
+
   running = 0;
 };
 

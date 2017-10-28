@@ -91,9 +91,8 @@ void logAddr(const uint32_t address, const uint8_t value, const uint8_t rw) {
 	Serial.println(value,HEX);
 }
 struct tcpu cpu;
-#if PORTREAD_USE_RAM
 struct tio io;
-#endif
+
 void reset6502();
 void cpu_nmi();
 static inline void cpu_irq();

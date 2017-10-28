@@ -62,10 +62,9 @@ extern AudioPlaySID  playSID;
 
 #define BASE_STACK     0x100
 
-struct tio {
+struct tio  {
 	uint32_t gpioa, gpiob, gpioc, gpiod, gpioe;
-	uint16_t dac0, dac1;
-};
+}__attribute__((packed, aligned(4)));
 
 struct tcpu {
   uint32_t exactTimingStartTime;
@@ -90,11 +89,11 @@ struct tcpu {
   w_rarr_ptr_t plamap_w; //Memory-Mapping write
   uint8_t _exrom:1, _game:1;
   uint8_t nmiLine;
- 
+
   tvic vic;
   tcia cia1;
   tcia cia2;
-  
+
   union {
 	uint8_t RAM[RAMSIZE];
 	uint16_t RAM16[RAMSIZE/2];
@@ -108,10 +107,7 @@ struct tcpu {
 
 };
 
-#if PORTREAD_USE_RAM
 extern struct tio io;
-#endif
-
 extern struct tcpu cpu;
 
 void cpu_reset();
@@ -209,25 +205,10 @@ typedef struct {
 
 #define KINETIS_GPIO		(*(KINETIS_GPIOS_t *)0x400FF000)
 
-#if PORTREAD_USE_RAM
-#define READGPIO {\
-	io.gpioa = GPIOA_PDIR;\
-	io.gpiob = GPIOB_PDIR;\
-	io.gpioc = GPIOC_PDIR;\
-	io.gpiod = GPIOD_PDIR;\
-	io.gpioe = GPIOE_PDIR;\
-	/*DAC0_DAT0L = cpu.io.dac0;*/\
-	/*DAC1_DAT0L = cpu.io.dac1;*/\
-}
-
-#else
-#define READGPIO {}
-#endif
 
 static inline uint8_t gpioRead(uint8_t pin) __attribute__((always_inline, unused));
 static inline uint8_t gpioRead(uint8_t pin)
 {
-#if PORTREAD_USE_RAM
 	if (__builtin_constant_p(pin)) {
 		if (pin == 0) {
 			return (CORE_PIN0_PORT & CORE_PIN0_BITMASK) ? 1 : 0;
@@ -361,12 +342,10 @@ static inline uint8_t gpioRead(uint8_t pin)
 			return 0;
 		}
 	} else {
-		Serial.println("Pin# not constant");
-		return digitalRead(pin);		
+		Serial.println("Warning: Pin# not constant");
+		return digitalRead(pin);
 	}
-#else
-	return digitalReadFast(pin);
-#endif
+
 }
 
 #endif

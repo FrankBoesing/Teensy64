@@ -53,7 +53,7 @@ void disableEventResponder(void) {
 
 #define PDB_CONFIG (PDB_SC_TRGSEL(15) | PDB_SC_PDBEN | PDB_SC_CONT | PDB_SC_PDBIE | PDB_SC_DMAEN)
 static float setDACFreq(float freq) {
-	
+
   if (!(SIM_SCGC6 & SIM_SCGC6_PDB)) return 0;
 
   unsigned int t = (float)F_BUS / freq - 0.5f;
@@ -63,7 +63,7 @@ static float setDACFreq(float freq) {
   PDB0_SC = PDB_CONFIG | PDB_SC_LDOK;
   PDB0_SC = PDB_CONFIG | PDB_SC_SWTRIG;
   PDB0_CH0C1 = 0x0101;
-  
+
   return (float)F_BUS / t;
 }
 
@@ -73,25 +73,25 @@ float setAudioSampleFreq(float freq) {
   return f;
 }
 
-void setAudioOff(void) { 
-#if !VGA  
+void setAudioOff(void) {
+#if !VGA
   if (!(SIM_SCGC6 & SIM_SCGC6_PDB)) return;
   PDB0_SC = 0;
 #endif
   AudioNoInterrupts();
   NVIC_DISABLE_IRQ(IRQ_USBOTG);
-  //NVIC_DISABLE_IRQ(IRQ_USBHS);   
+  //NVIC_DISABLE_IRQ(IRQ_USBHS);
 }
 
 void setAudioOn(void) {
-#if !VGA  
+#if !VGA
   if (!(SIM_SCGC6 & SIM_SCGC6_PDB)) return;
   PDB0_SC = PDB_CONFIG | PDB_SC_LDOK;
   PDB0_SC = PDB_CONFIG | PDB_SC_SWTRIG;
-#endif  
+#endif
   AudioInterrupts();
   NVIC_ENABLE_IRQ(IRQ_USBOTG);
-  //NVIC_ENABLE_IRQ(IRQ_USBHS);  
+  //NVIC_ENABLE_IRQ(IRQ_USBHS);
 }
 
 void listInterrupts() {

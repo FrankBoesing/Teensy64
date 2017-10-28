@@ -36,6 +36,7 @@
 #define Teensy64_h_
 
 #include <Arduino.h>
+#include <DMAChannel.h>
 #include "settings.h"
 
 #define VERSION "08"
@@ -99,9 +100,6 @@ extern uint8_t SDinitialized;
 
 #define ISR_PRIORITY_RASTERLINE   255
 
-#if !defined(PORTREAD_USE_RAM)
-#define PORTREAD_USE_RAM            1
-#endif
 
 //Pins
 

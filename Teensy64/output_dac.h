@@ -38,20 +38,14 @@ public:
 	virtual void update(void);
 	void begin(void);
 	void analogReference(int ref);
+	static DMAChannel dma;
 private:
 	static audio_block_t *block_left_1st;
 	static audio_block_t *block_left_2nd;
 	static bool update_responsibility;
 	audio_block_t *inputQueueArray[1];
-#if defined(KINETISK)
-	static DMAChannel dma;
 	static void isr(void);
-#elif defined(KINETISL)
-	static DMAChannel dma1;
-	static DMAChannel dma2;
-	static void isr1(void);
-	static void isr2(void);
-#endif
+
 };
 
 #endif
