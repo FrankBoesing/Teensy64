@@ -117,7 +117,7 @@ void AudioOutputAnalog::begin(void)
 #if !VGA
 	dma.triggerAtHardwareEvent(DMAMUX_SOURCE_PDB);
 #else
-	dma.triggerAtHardwareEvent(DMAMUX_SOURCE_FTM0_CH7);
+	dma.triggerAtHardwareEvent(DMAMUX_SOURCE_FTM0_CH6);
 #endif
 	dma.enable();
 	dma.attachInterrupt(isr);

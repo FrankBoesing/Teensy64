@@ -42,9 +42,10 @@
 #if VGA
 #include <uVGA.h>
 #include <uVGA_valid_settings.h>
-DMAMEM static uint8_t _VGA_frame_buffer[UVGA_FB_SIZE(452, 600, 2)];
-uint8_t * VGA_frame_buffer = _VGA_frame_buffer;
+UVGA_STATIC_FRAME_BUFFER(uvga_fb);
 uVGA uvga;
+uint8_t * VGA_frame_buffer = uvga_fb;
+
 #else
 ILI9341_t3DMA tft = ILI9341_t3DMA(TFT_CS, TFT_DC, TFT_RST, TFT_MOSI, TFT_SCLK, TFT_MISO);
 #endif
