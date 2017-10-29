@@ -1665,13 +1665,14 @@ noDisplayIncRC:
   cpu.vic.spriteCycles3_7 = 0;
 
   if (cpu.vic.lineHasSprites) {
-	cpu.vic.lineHasSprites = 0;
     memset(cpu.vic.spriteLine, 0, sizeof(cpu.vic.spriteLine) );
   }
 
+  cpu.vic.lineHasSprites = 0;
   uint32_t spriteYCheck = cpu.vic.R[0x15]; //Sprite enabled Register
 
   if (spriteYCheck) {
+
 
     unsigned short R17 = cpu.vic.R[0x17]; //Sprite-y-expansion
     unsigned char collision = 0;
@@ -2064,13 +2065,12 @@ void vic_write(uint32_t address, uint8_t value) {
       break;
     case 0x1A : //IRQ Mask
       cpu.vic.R[address] = value & 0x0f;
-#if 0	  
       //ggf Interrupt triggern
       if (cpu.vic.R[0x19] & cpu.vic.R[0x1a])
         cpu.vic.R[0x19] |= 0x80;
       else
         cpu.vic.R[0x19] &= 0x7f;
-#endif
+
       break;
     case 0x1e:
     case 0x1f:
