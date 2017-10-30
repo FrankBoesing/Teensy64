@@ -66,7 +66,7 @@ bool c64USBKeyboard::claim(Device_t *dev, int type, const uint8_t *descriptors, 
   if (endpoint == 0) return false;
   if (descriptors[21] != 3) return false; // must be interrupt type
   uint32_t size = descriptors[22] | (descriptors[23] << 8);
-  if (size != 8) {
+  if (size != 8 && size != 64) { //Size==64 by "menno" - thank you.
     return false; // must be 8 bytes for Keyboard Boot Protocol
   }
   //uint32_t interval = descriptors[24];
