@@ -39,7 +39,7 @@
 #include <DMAChannel.h>
 #include "settings.h"
 
-#define VERSION "08"
+#define VERSION "09"
 #define NTSC (!PAL)
 #define USBHOST (!PS2KEYBOARD)
 
@@ -58,7 +58,7 @@ extern ILI9341_t3DMA tft;
 
 
 #if USBHOST
-#include "usb_USBHost.h"
+#include "keyboard_usb.h"
 extern USBHost myusb;
 #endif
 

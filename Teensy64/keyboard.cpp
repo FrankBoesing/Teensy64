@@ -38,11 +38,15 @@
 
 
 #if USBHOST
-#include "usb_USBHost.h"
+#include "keyboard_usb.h"
 
 USBHost myusb;
-//USBHub hub1, hub2, hub3;
-KeyboardController keyboard;
+
+c64USBKeyboard keyboard(myusb);
+
+USBHub hub1(myusb);
+USBHub hub2(myusb);
+USBHub hub3(myusb);
 
 #endif
 
@@ -310,7 +314,6 @@ uint8_t cia1PORTB(void) {
 }
 
 #if USBHOST
-#include "usb_USBHost.h"
 
 void usbKeyboardmatrix(void * keys) { //Interrupt
   kbdData.kv = *(uint32_t*) keys;//Use only the first 4 bytes

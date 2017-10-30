@@ -152,7 +152,6 @@ struct tvic {
   };
 
   //tsprite spriteInfo[8];//todo
-  //uint16_t spriteLine[SCREEN_WIDTH + 24 * 2];
   uint16_t spriteLine[SPRITE_MAX_X];
 
   uint8_t lineMemChr[40];

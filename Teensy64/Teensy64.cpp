@@ -310,7 +310,7 @@ void initMachine() {
   LED_OFF;
 
   Serial.println("=============================\n");
-  Serial.println("Teensy64 " __DATE__ " " __TIME__ "\n");
+  Serial.println("Teensy64 v." VERSION " " __DATE__ " " __TIME__ "\n");
 
   Serial.print("SD Card ");
   Serial.println(SDinitialized ? "initialized." : "failed, or not present.");
@@ -371,7 +371,6 @@ void initMachine() {
   cpu.vic.lineClock.begin( oneRasterLine, LINETIMER_DEFAULT_FREQ);
   cpu.vic.lineClock.priority( ISR_PRIORITY_RASTERLINE );
 
-  Serial.println("Starting.\n");
   attachInterrupt(digitalPinToInterrupt(PIN_RESET), resetMachine, RISING);
 
   listInterrupts();
@@ -395,6 +394,8 @@ void yield(void) {
   }
   do_sendString();
 
+  myusb.Task();
+  
   running = 0;
 };
 

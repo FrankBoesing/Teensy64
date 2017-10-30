@@ -2052,25 +2052,9 @@ void vic_write(uint32_t address, uint8_t value) {
       break;
     case 0x19 : //IRQs
       cpu.vic.R[0x19] &= (~value & 0x0f);
-      //ggf Interrupt triggern
-
-#if 0 // Dies sollte eigentlich so sein - funktioniert aber beim intro von "commando95" nicht!
-      if (cpu.vic.R[0x19] & cpu.vic.R[0x1a])
-        cpu.vic.R[0x19] |= 0x80;
-      else
-        cpu.vic.R[0x19] &= 0x7f;
-#endif
-
       break;
     case 0x1A : //IRQ Mask
       cpu.vic.R[address] = value & 0x0f;
-#if 0	  
-      //ggf Interrupt triggern
-      if (cpu.vic.R[0x19] & cpu.vic.R[0x1a])
-        cpu.vic.R[0x19] |= 0x80;
-      else
-        cpu.vic.R[0x19] &= 0x7f;
-#endif
       break;
     case 0x1e:
     case 0x1f:
