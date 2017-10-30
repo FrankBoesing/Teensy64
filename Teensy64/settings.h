@@ -37,7 +37,7 @@
 #define settings_h_
 
 #ifndef VGA
-#define VGA 			1 	//use 0 for ILI9341 Display
+#define VGA 			0 	//use 0 for ILI9341 Display
 #endif
 
 #ifndef PS2KEYBOARD
