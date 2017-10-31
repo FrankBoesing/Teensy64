@@ -60,6 +60,7 @@
 
 #include <reSID.h>
 extern AudioPlaySID  playSID;
+extern AudioOutputAnalog audioout;
 
 #define BASE_STACK     0x100
 

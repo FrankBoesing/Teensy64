@@ -69,11 +69,15 @@ audio_block_t * AudioOutputAnalog::block_left_1st = NULL;
 audio_block_t * AudioOutputAnalog::block_left_2nd = NULL;
 bool AudioOutputAnalog::update_responsibility = false;
 DMAChannel AudioOutputAnalog::dma(false);
+uint8_t AudioOutputAnalog::volume;
 
 void AudioOutputAnalog::begin(void)
 {
 	SIM_SCGC2 |= SIM_SCGC2_DAC0;
 	DAC0_C0 = DAC_C0_DACEN;                   // 1.2V VDDA is DACREF_2
+	
+	volume = 4;
+	
 	// slowly ramp up to DC voltage, approx 1/4 second
 	for (int16_t i=0; i<=2048; i+=8) {
 		*(int16_t *)&(DAC0_DAT0L) = i;
@@ -167,7 +171,7 @@ void AudioOutputAnalog::isr(void)
 	int16_t *dest;
 	audio_block_t *block;
 	uint32_t saddr;
-
+	
 	saddr = (uint32_t)(dma.TCD->SADDR);
 	dma.clearInterrupt();
 	if (saddr < (uint32_t)dac_buffer + sizeof(dac_buffer) / 2) {
@@ -186,7 +190,7 @@ void AudioOutputAnalog::isr(void)
 		src = block->data;
 		do {
 			// TODO: this should probably dither
-			*dest++ = ((*src++) + 32768) >> 4;
+			*dest++ = (((*src++) + 32768) >> AudioOutputAnalog::volume) ;
 		} while (dest < end);
 		AudioStream::release(block);
 		AudioOutputAnalog::block_left_1st = AudioOutputAnalog::block_left_2nd;

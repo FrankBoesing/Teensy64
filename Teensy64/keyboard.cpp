@@ -36,7 +36,6 @@
 #include "Teensy64.h"
 #include "keyboard.h"
 
-
 #if USBHOST
 #include "keyboard_usb.h"
 
@@ -341,7 +340,7 @@ void usbKeyboardmatrix(void * keys) { //Interrupt
     if (!kbdData.kv ) return;
     if (hotkey(kbdData.k)) return;
 
-    //Serial.printf("0x%x 0x%x\n", kbdData.ke, kbdData.k);
+    Serial.printf("0x%x 0x%x\n", kbdData.ke, kbdData.k);
 
     //Special Keys
     //RESET
@@ -370,11 +369,19 @@ void usbKeyboardmatrix(void * keys) { //Interrupt
 	   USBHS_ASYNC_ON;
 	   //TODO: Does not work: Bug in USB Code ?
 	   keyboard.numLock(cpu.swapJoysticks);
-	   keyboard.updateLEDS();
-	   delay(100);
+	  // keyboard.updateLEDS();
+	  // delay(100);
 	   USBHS_ASYNC_OFF;
 	   
 	   return;
+	}
+	else if (kbdData.ke == 0x10) {
+		if  (kbdData.k == 0x52) { //volume up			
+			if (audioout.volume > 4) audioout.volume--; //volume is a bit-shift right
+		} else 
+		if  (kbdData.k == 0x51) { //volume down
+			if (audioout.volume <16) audioout.volume++; //volume is a bit-shift right
+		}
 	}
 
     //Shift Lock

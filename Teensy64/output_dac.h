@@ -39,12 +39,13 @@ public:
 	void begin(void);
 	void analogReference(int ref);
 	static DMAChannel dma;
-private:
+//private:
 	static audio_block_t *block_left_1st;
 	static audio_block_t *block_left_2nd;
 	static bool update_responsibility;
 	audio_block_t *inputQueueArray[1];
 	static void isr(void);
+	static uint8_t volume;
 
 };
 
