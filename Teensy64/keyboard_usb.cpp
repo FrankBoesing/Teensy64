@@ -78,7 +78,7 @@ bool c64USBKeyboard::claim(Device_t *dev, int type, const uint8_t *descriptors, 
   queue_Control_Transfer(dev, &setup, NULL, this);
   keyboardmatrixFunction = keyboardmatrixFunc;//FB
   Serial.println("USB Keyboard connected.");
-   capsLock(0x07);
+
   return true;
 }
 
