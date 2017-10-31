@@ -244,11 +244,19 @@ uint8_t cia1PORTA(void) {
 
   v = ~cpu.cia1.R[0x02] | (cpu.cia1.R[0x00] & cpu.cia1.R[0x02]);
 
-  if ( gpioRead(PIN_JOY2_1) == 0 ) v &= 0xFE;
-  if ( gpioRead(PIN_JOY2_2) == 0 ) v &= 0xFD;
-  if ( gpioRead(PIN_JOY2_3) == 0 ) v &= 0xFB;
-  if ( gpioRead(PIN_JOY2_4) == 0 ) v &= 0xF7;
-  if ( gpioRead(PIN_JOY2_BTN) == 0 ) v &= 0xEF;
+  if (!cpu.swapJoysticks) {
+	if ( gpioRead(PIN_JOY2_1) == 0 ) v &= 0xFE;
+	if ( gpioRead(PIN_JOY2_2) == 0 ) v &= 0xFD;
+	if ( gpioRead(PIN_JOY2_3) == 0 ) v &= 0xFB;
+	if ( gpioRead(PIN_JOY2_4) == 0 ) v &= 0xF7;
+	if ( gpioRead(PIN_JOY2_BTN) == 0 ) v &= 0xEF;
+  } else {
+	if ( gpioRead(PIN_JOY1_1) == 0 ) v &= 0xFE;
+	if ( gpioRead(PIN_JOY1_2) == 0 ) v &= 0xFD;
+	if ( gpioRead(PIN_JOY1_3) == 0 ) v &= 0xFB;
+	if ( gpioRead(PIN_JOY1_4) == 0 ) v &= 0xF7;
+	if ( gpioRead(PIN_JOY1_BTN) == 0 ) v &= 0xEF;
+  }
 
   if (!kbdData.kv) return v; //Keine Taste gedrückt
 
@@ -282,11 +290,19 @@ uint8_t cia1PORTB(void) {
 
   v = ~cpu.cia1.R[0x03] | (cpu.cia1.R[0x00] & cpu.cia1.R[0x02]) ;
 
-  if ( gpioRead(PIN_JOY1_1) == 0 ) v &= 0xFE;
-  if ( gpioRead(PIN_JOY1_2) == 0 ) v &= 0xFD;
-  if ( gpioRead(PIN_JOY1_3) == 0 ) v &= 0xFB;
-  if ( gpioRead(PIN_JOY1_4) == 0 ) v &= 0xF7;
-  if ( gpioRead(PIN_JOY1_BTN) == 0 ) v &= 0xEF;
+  if (!cpu.swapJoysticks) {
+	if ( gpioRead(PIN_JOY1_1) == 0 ) v &= 0xFE;
+	if ( gpioRead(PIN_JOY1_2) == 0 ) v &= 0xFD;
+	if ( gpioRead(PIN_JOY1_3) == 0 ) v &= 0xFB;
+	if ( gpioRead(PIN_JOY1_4) == 0 ) v &= 0xF7;
+	if ( gpioRead(PIN_JOY1_BTN) == 0 ) v &= 0xEF;
+  } else {
+	if ( gpioRead(PIN_JOY1_1) == 0 ) v &= 0xFE;
+	if ( gpioRead(PIN_JOY1_2) == 0 ) v &= 0xFD;
+	if ( gpioRead(PIN_JOY1_3) == 0 ) v &= 0xFB;
+	if ( gpioRead(PIN_JOY1_4) == 0 ) v &= 0xF7;
+	if ( gpioRead(PIN_JOY1_BTN) == 0 ) v &= 0xEF;
+  }
 
   if (!kbdData.kv) return v; //Keine Taste gedrückt
 
@@ -345,6 +361,21 @@ void usbKeyboardmatrix(void * keys) { //Interrupt
       cpu_nmi();
       return;
     }
+    else if (kbdData.k == 0x53) {// Joystick - Swap " Numlock"
+	   cpu.swapJoysticks = (cpu.swapJoysticks + 1) & 0x01;
+	   //Todo: Add some indication here
+	   Serial.print("Joysticks ");
+	   Serial.println( (cpu.swapJoysticks)?"swapped":"default");
+	   
+	   USBHS_ASYNC_ON;
+	   //TODO: Does not work: Bug in USB Code ?
+	   keyboard.numLock(cpu.swapJoysticks);
+	   keyboard.updateLEDS();
+	   delay(100);
+	   USBHS_ASYNC_OFF;
+	   
+	   return;
+	}
 
     //Shift Lock
     if ( kbdData.k == 0x39 ) {

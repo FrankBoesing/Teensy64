@@ -62,6 +62,20 @@ extern ILI9341_t3DMA tft;
 extern USBHost myusb;
 #endif
 
+#if VGA && USBHOST
+#define USBHS_ASYNC_ON {\
+		USBHS_USBCMD |= USBHS_USBCMD_ASE;\
+		Serial.println("USBHS: Async ON.");\
+}		
+
+#define USBHS_ASYNC_OFF {\
+		USBHS_USBCMD &= ~(USBHS_USBCMD_ASE);\
+		Serial.println("USBHS: Async OFF.");\
+}		
+#else
+#define USBHS_ASYNC_ON
+#define USBHS_ASYNC_OFF
+#endif
 
 void initMachine();
 void resetMachine() __attribute__ ((noreturn));

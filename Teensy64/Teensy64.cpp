@@ -143,11 +143,8 @@ FASTRUN void ftm0_isr(void) {
 #endif
 
 void add_uVGAhsync(void) {
-
-#if VGA && USBHOST
-  Serial.println("USB-HOST: Disabling Async transfers.");
-  USBHS_USBCMD &= ~(USBHS_USBCMD_ASE);//Disable USB Host Async Transfers
-#endif
+ 
+  USBHS_ASYNC_OFF;
 
   Serial.println("uVGA: Add hSync interrupt.");
 

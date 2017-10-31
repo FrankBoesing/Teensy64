@@ -39,6 +39,7 @@
 #include <Arduino.h>
 #include <arm_math.h>
 
+
 #define INLINE 			static inline __attribute__((always_inline))
 #define INLINEOP 		static inline __attribute__((always_inline, flatten))
 #define OPCODE			static
@@ -89,6 +90,7 @@ struct tcpu {
   w_rarr_ptr_t plamap_w; //Memory-Mapping write
   uint8_t _exrom:1, _game:1;
   uint8_t nmiLine;
+  uint8_t swapJoysticks;
 
   tvic vic;
   tcia cia1;
@@ -183,28 +185,6 @@ void cia_clockt(int ticks);
 #define CORE_PIN61_PORT	io.gpioe
 #define CORE_PIN62_PORT	io.gpioe
 #define CORE_PIN63_PORT	io.gpioe
-
-// General-Purpose Input/Output (GPIO)
-struct KINETIS_GPIO_t {
-	volatile uint32_t PDOR;
-	volatile uint32_t PSOR;
-	volatile uint32_t PCOR;
-	volatile uint32_t PTOR;
-	volatile uint32_t PDIR;
-	volatile uint32_t PDDR;
-	volatile uint32_t unused[10];
-}__attribute__((packed));
-
-typedef struct {
-	struct KINETIS_GPIO_t A;
-	struct KINETIS_GPIO_t B;
-	struct KINETIS_GPIO_t C;
-	struct KINETIS_GPIO_t D;
-	struct KINETIS_GPIO_t E;
-}__attribute__((packed)) KINETIS_GPIOS_t;
-
-#define KINETIS_GPIO		(*(KINETIS_GPIOS_t *)0x400FF000)
-
 
 static inline uint8_t gpioRead(uint8_t pin) __attribute__((always_inline, unused));
 static inline uint8_t gpioRead(uint8_t pin)
