@@ -33,7 +33,7 @@
 
 */
 
-#include "ILI9341_t64.h"
+#include "ili9341_t64.h"
 #include "vic_palette.h"
 
 #define SPICLOCK 144e6 //Just a number..max speed
