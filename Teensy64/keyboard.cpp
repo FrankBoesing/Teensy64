@@ -296,11 +296,11 @@ uint8_t cia1PORTB(void) {
 	if ( gpioRead(PIN_JOY1_4) == 0 ) v &= 0xF7;
 	if ( gpioRead(PIN_JOY1_BTN) == 0 ) v &= 0xEF;
   } else {
-	if ( gpioRead(PIN_JOY1_1) == 0 ) v &= 0xFE;
-	if ( gpioRead(PIN_JOY1_2) == 0 ) v &= 0xFD;
-	if ( gpioRead(PIN_JOY1_3) == 0 ) v &= 0xFB;
-	if ( gpioRead(PIN_JOY1_4) == 0 ) v &= 0xF7;
-	if ( gpioRead(PIN_JOY1_BTN) == 0 ) v &= 0xEF;
+	if ( gpioRead(PIN_JOY2_1) == 0 ) v &= 0xFE;
+	if ( gpioRead(PIN_JOY2_2) == 0 ) v &= 0xFD;
+	if ( gpioRead(PIN_JOY2_3) == 0 ) v &= 0xFB;
+	if ( gpioRead(PIN_JOY2_4) == 0 ) v &= 0xF7;
+	if ( gpioRead(PIN_JOY2_BTN) == 0 ) v &= 0xEF;
   }
 
   if (!kbdData.kv) return v; //Keine Taste gedrückt
