@@ -54,7 +54,7 @@ void cia2_write(uint32_t address, uint8_t value) {
   switch (address) {
 
     case 0x00 : {
-      if (!(value & 0x18)) {
+      if ((~value & 0x38)) {
         cpu_setExactTiming();
       }
 
@@ -228,6 +228,10 @@ uint8_t cia2_read(uint32_t address) {
 
     case 0x00 : {
         ret = (cpu.cia2.R[address] & 0x3f) | READ_CLK_DATA();
+        if ((~ret & 0x3f)) {
+          cpu_setExactTiming();
+        }
+		
         break;
       }
 
