@@ -45,7 +45,7 @@ void  c64USBKeyboard::attachC64(void (*keyboardmatrix)(void *keys)) {//FB
 	
 bool c64USBKeyboard::claim(Device_t *dev, int type, const uint8_t *descriptors, uint32_t len)
 {
-  println("c64USBKeyboard claim this=", (uint32_t)this, HEX);
+  //println("c64USBKeyboard claim this=", (uint32_t)this, HEX);
 
   // only claim at interface level
   if (type != 1) return false;
@@ -145,13 +145,13 @@ void c64USBKeyboard::scrollLock(bool f) {
 }
 
 void c64USBKeyboard::LEDS(uint8_t leds) {
-  println("Keyboard setLEDS ", leds, HEX);
+ // println("Keyboard setLEDS ", leds, HEX);
   leds_.byte = leds;
   updateLEDS();
 }
 
 void c64USBKeyboard::updateLEDS() {
-  println("KBD: Update LEDS", leds_.byte, HEX);
+  //println("KBD: Update LEDS", leds_.byte, HEX);
   // Now lets tell keyboard new state.
   static uint8_t keyboard_keys_report[1] = {0};
   setup_t keys_setup;
